@@ -338,27 +338,52 @@ const SIGNAL_LABEL = { buy: '🟢 買進', sell: '🔴 賣出', watch: '🟡 觀
 const SIGNAL_CLASS = { buy: 'buy', sell: 'sell', watch: 'watch', na: 'na' };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Yahoo Finance API（透過 CORS proxy）
+// Yahoo Finance API — 多 Proxy 同時競速（Promise.any）
 // ─────────────────────────────────────────────────────────────────────────────
-const PROXIES = [
+
+// 記住本次 session 最快的 proxy，後續優先使用
+let _bestProxy = null;
+
+const PROXY_MAKERS = [
   url => `https://corsproxy.io/?${encodeURIComponent(url)}`,
   url => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
-  url => url,   // 直連（最後嘗試，部分瀏覽器可能成功）
+  url => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`,
+  url => url,   // 直連（GitHub Pages HTTPS 有機會成功）
 ];
 
+async function _tryOneProxy(makeUrl, yahooUrl) {
+  const res = await fetch(makeUrl(yahooUrl), { signal: AbortSignal.timeout(9000) });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const text = await res.text();
+  let parsed;
+  try { parsed = JSON.parse(text); } catch { throw new Error('not JSON'); }
+  // allorigins /get 格式：{ contents: "..." }
+  if (parsed?.contents) return JSON.parse(parsed.contents);
+  // 驗證是否為 Yahoo Finance 格式
+  if (!parsed?.chart) throw new Error('not yahoo format');
+  return parsed;
+}
+
 async function fetchWithProxy(yahooUrl) {
-  for (const makeUrl of PROXIES) {
+  // 若已知最快的 proxy，先單獨快速嘗試
+  if (_bestProxy !== null) {
     try {
-      const res = await fetch(makeUrl(yahooUrl), { signal: AbortSignal.timeout(12000) });
-      if (!res.ok) continue;
-      const json = await res.json();
-      // allorigins wraps in {contents: "..."}
-      if (typeof json === 'string') return JSON.parse(json);
-      if (json.contents) return JSON.parse(json.contents);
-      return json;
-    } catch (_) { /* try next proxy */ }
+      const result = await _tryOneProxy(PROXY_MAKERS[_bestProxy], yahooUrl);
+      if (result) return result;
+    } catch (_) { _bestProxy = null; }  // 失效則重新競速
   }
-  return null;
+
+  // 所有 proxy 同時競速，取最快成功的
+  const race = PROXY_MAKERS.map((makeUrl, idx) =>
+    _tryOneProxy(makeUrl, yahooUrl).then(data => ({ data, idx }))
+  );
+  try {
+    const { data, idx } = await Promise.any(race);
+    _bestProxy = idx;   // 記住贏家
+    return data;
+  } catch {
+    return null;
+  }
 }
 
 async function fetchChart(code) {
@@ -398,7 +423,7 @@ async function refreshAll() {
   document.getElementById('grid').innerHTML = '<div id="loading-msg"><span class="spinner"></span>正在向 Yahoo Finance 抓取資料...</div>';
 
   let done = 0;
-  const BATCH = 4;
+  const BATCH = 3;   // 較小批次，減少同時對 proxy 的請求量
   const errors = [];
 
   for (let i = 0; i < STOCKS.length; i += BATCH) {
@@ -420,7 +445,7 @@ async function refreshAll() {
   document.getElementById('refresh-btn').textContent = '🔄 重新整理';
   state.loading = false;
 
-  if (errors.length > 0 && Object.keys(state.data).length === 0) {
+  if (Object.keys(state.data).length === 0) {
     document.getElementById('grid').innerHTML = `
       <div id="error-msg">
         <b style="color:#f87171;font-size:15px">⚠️ 無法取得 Yahoo Finance 資料</b><br><br>
