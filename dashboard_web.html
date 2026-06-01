@@ -470,12 +470,13 @@ function renderCards() {
     const signal = d ? getSignal(d.rsi, d.ma5, d.ma20, d.bias) : 'na';
     const html = buildCard(s, d, signal);
     const oldEl = grid.querySelector(`[data-code="${s.code}"]`);
+    const tmp = document.createElement('div');
+    tmp.innerHTML = html.trim();
+    const newEl = tmp.firstElementChild;   // firstElementChild 跳過開頭的空白文字節點
     if (oldEl) {
-      oldEl.outerHTML = html;
+      oldEl.replaceWith(newEl);
     } else {
-      const tmp = document.createElement('div');
-      tmp.innerHTML = html;
-      grid.appendChild(tmp.firstChild);
+      grid.appendChild(newEl);
     }
   });
 
