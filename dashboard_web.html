@@ -175,7 +175,7 @@
 </head>
 <body>
 
-<!-- ── Header ────────────────────────────────────────────────────── -->
+<!-- ── Header ──────────────────────────────────────────── -->
 <header>
   <h1>📈 台股電子股 <span>即時監控</span></h1>
   <div style="display:flex;gap:12px;align-items:center">
@@ -188,7 +188,7 @@
 </header>
 <div class="progress-bar"><div class="progress-fill" id="progress" style="width:0%"></div></div>
 
-<!-- ── Controls ──────────────────────────────────────────────────── -->
+<!-- ── Controls ────────────────────────────────────────── -->
 <div class="controls">
   <div class="industry-tabs" id="tabs"></div>
   <div class="sort-group">
@@ -208,7 +208,7 @@
   </div>
 </div>
 
-<!-- ── Stats Bar ─────────────────────────────────────────────────── -->
+<!-- ── Stats Bar ───────────────────────────────────────── -->
 <div class="stats-bar" id="stats-bar" style="display:none">
   <div class="stat-item"><span class="stat-label">監控</span><span class="stat-val" id="s-total">—</span></div>
   <div class="stat-item"><span class="stat-label">上漲</span><span class="stat-val" style="color:var(--green)" id="s-up">—</span></div>
@@ -218,12 +218,12 @@
   <div class="stat-item"><span class="stat-label">平均RSI</span><span class="stat-val" id="s-rsi">—</span></div>
 </div>
 
-<!-- ── Card Grid ─────────────────────────────────────────────────── -->
+<!-- ── Card Grid ───────────────────────────────────────── -->
 <div class="grid" id="grid">
   <div id="loading-msg"><span class="spinner"></span>正在載入台股資料，請稍候...</div>
 </div>
 
-<!-- ── Modal ─────────────────────────────────────────────────────── -->
+<!-- ── Modal ─────────────────────────────────────────── -->
 <div class="modal-overlay" id="modal" onclick="if(event.target===this)closeModal()">
   <div class="modal">
     <div class="modal-header">
@@ -252,13 +252,13 @@ const STOCKS = [
   // 24 半導體
   {code:'2330', name:'台積電',    ind:'24'}, {code:'2303', name:'聯電',      ind:'24'},
   {code:'2454', name:'聯發科',    ind:'24'}, {code:'3034', name:'聯詠',      ind:'24'},
-  {code:'2379', name:'瑞昱',      ind:'24'}, {code:'2408', name:'南亞科',    ind:'24'},
+  {code:'2379', name:'瑞昕',      ind:'24'}, {code:'2408', name:'南亞科',    ind:'24'},
   {code:'2344', name:'華邦電',    ind:'24'}, {code:'3711', name:'日月光投控',ind:'24'},
   {code:'5347', name:'世界',      ind:'24'}, {code:'3443', name:'創意',      ind:'24'},
   {code:'6533', name:'晶心科',    ind:'24'}, {code:'2337', name:'旺宏',      ind:'24'},
   // 25 電腦及週邊
   {code:'2317', name:'鴻海',      ind:'25'}, {code:'2382', name:'廣達',      ind:'25'},
-  {code:'2357', name:'華碩',      ind:'25'}, {code:'2353', name:'宏碁',      ind:'25'},
+  {code:'2357', name:'華經',      ind:'25'}, {code:'2353', name:'宏祀',      ind:'25'},
   {code:'3231', name:'緯創',      ind:'25'}, {code:'2301', name:'光寶科',    ind:'25'},
   {code:'2356', name:'英業達',    ind:'25'}, {code:'2376', name:'技嘉',      ind:'25'},
   // 26 光電
@@ -270,7 +270,7 @@ const STOCKS = [
   {code:'2498', name:'宏達電',    ind:'27'}, {code:'3706', name:'神達',      ind:'27'},
   // 28 電子零組件
   {code:'2308', name:'台達電',    ind:'28'}, {code:'2327', name:'國巨',      ind:'28'},
-  {code:'3189', name:'景碩',      ind:'28'}, {code:'2393', name:'億光',      ind:'28'},
+  {code:'3189', name:'景穩',      ind:'28'}, {code:'2393', name:'億光',      ind:'28'},
   {code:'6116', name:'彩晶',      ind:'28'},
   // 29 電子設備
   {code:'2395', name:'研華',      ind:'29'}, {code:'6415', name:'矽力-KY',   ind:'29'},
@@ -279,7 +279,7 @@ const STOCKS = [
   {code:'2392', name:'正崴',      ind:'30'}, {code:'5263', name:'委來好',    ind:'30'},
   {code:'8299', name:'群聯',      ind:'30'},
   // 31 其他電子
-  {code:'5269', name:'祥碩',      ind:'31'}, {code:'3105', name:'穩懋',      ind:'31'},
+  {code:'5269', name:'祥穩',      ind:'31'}, {code:'3105', name:'穩懸',      ind:'31'},
   {code:'6446', name:'藥華藥',    ind:'31'},
 ];
 
@@ -338,27 +338,52 @@ const SIGNAL_LABEL = { buy: '🟢 買進', sell: '🔴 賣出', watch: '🟡 觀
 const SIGNAL_CLASS = { buy: 'buy', sell: 'sell', watch: 'watch', na: 'na' };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Yahoo Finance API（透過 CORS proxy）
+// Yahoo Finance API — 多 Proxy 同時競速（Promise.any）
 // ─────────────────────────────────────────────────────────────────────────────
-const PROXIES = [
+
+// 記住本次 session 最快的 proxy，後續優先使用
+let _bestProxy = null;
+
+const PROXY_MAKERS = [
   url => `https://corsproxy.io/?${encodeURIComponent(url)}`,
   url => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
-  url => url,   // 直連（最後嘗試，部分瀏覽器可能成功）
+  url => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`,
+  url => url,   // 直連（GitHub Pages HTTPS 有機會成功）
 ];
 
+async function _tryOneProxy(makeUrl, yahooUrl) {
+  const res = await fetch(makeUrl(yahooUrl), { signal: AbortSignal.timeout(9000) });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const text = await res.text();
+  let parsed;
+  try { parsed = JSON.parse(text); } catch { throw new Error('not JSON'); }
+  // allorigins /get 格式：{ contents: "..." }
+  if (parsed?.contents) return JSON.parse(parsed.contents);
+  // 驗證是否為 Yahoo Finance 格式
+  if (!parsed?.chart) throw new Error('not yahoo format');
+  return parsed;
+}
+
 async function fetchWithProxy(yahooUrl) {
-  for (const makeUrl of PROXIES) {
+  // 若已知最快的 proxy，先單獨快速嘗試
+  if (_bestProxy !== null) {
     try {
-      const res = await fetch(makeUrl(yahooUrl), { signal: AbortSignal.timeout(12000) });
-      if (!res.ok) continue;
-      const json = await res.json();
-      // allorigins wraps in {contents: "..."}
-      if (typeof json === 'string') return JSON.parse(json);
-      if (json.contents) return JSON.parse(json.contents);
-      return json;
-    } catch (_) { /* try next proxy */ }
+      const result = await _tryOneProxy(PROXY_MAKERS[_bestProxy], yahooUrl);
+      if (result) return result;
+    } catch (_) { _bestProxy = null; }  // 失效則重新競速
   }
-  return null;
+
+  // 所有 proxy 同時競速，取最快成功的
+  const race = PROXY_MAKERS.map((makeUrl, idx) =>
+    _tryOneProxy(makeUrl, yahooUrl).then(data => ({ data, idx }))
+  );
+  try {
+    const { data, idx } = await Promise.any(race);
+    _bestProxy = idx;   // 記住贏家
+    return data;
+  } catch {
+    return null;
+  }
 }
 
 async function fetchChart(code) {
@@ -398,7 +423,7 @@ async function refreshAll() {
   document.getElementById('grid').innerHTML = '<div id="loading-msg"><span class="spinner"></span>正在向 Yahoo Finance 抓取資料...</div>';
 
   let done = 0;
-  const BATCH = 4;
+  const BATCH = 3;   // 較小批次，減少同時對 proxy 的請求量
   const errors = [];
 
   for (let i = 0; i < STOCKS.length; i += BATCH) {
@@ -420,19 +445,18 @@ async function refreshAll() {
   document.getElementById('refresh-btn').textContent = '🔄 重新整理';
   state.loading = false;
 
-  if (errors.length > 0 && Object.keys(state.data).length === 0) {
+  if (Object.keys(state.data).length === 0) {
     document.getElementById('grid').innerHTML = `
       <div id="error-msg">
-        <b style="color:#f87171;font-size:15px">⚠️ 無法連線至 Yahoo Finance API</b><br><br>
-        常見原因：<br>
-        1. <b>CORS 限制</b>：從 <code>file://</code> 開啟本機 HTML 時，部分瀏覽器會封鎖跨域請求<br>
-        2. <b>網路限制</b>：防火牆封鎖了外部 API<br><br>
-        <b>解法（任選其一）：</b><br>
-        ① 用 Python 啟動本機伺服器（推薦）：<br>
-        &nbsp;&nbsp;<code style="background:#1c2230;padding:4px 8px;border-radius:4px">python -m http.server 8080</code>
-        → 開啟 <a href="http://localhost:8080/dashboard_web.html" style="color:#7dd3fc">http://localhost:8080/dashboard_web.html</a><br><br>
-        ② Chrome 加上啟動參數：<code style="background:#1c2230;padding:4px 8px;border-radius:4px">--disable-web-security --user-data-dir=/tmp/chrome</code><br>
-        ③ 使用 Firefox（對 file:// 的 CORS 限制較寬鬆）
+        <b style="color:#f87171;font-size:15px">⚠️ 無法取得 Yahoo Finance 資料</b><br><br>
+        可能原因：<br>
+        1. <b>網路問題</b>：請確認網路連線正常<br>
+        2. <b>Yahoo Finance 暫時無回應</b>：請稍後按「🔄 重新整理」再試<br>
+        3. <b>防火牆或 VPN</b>：可能封鎖了 CORS Proxy 的連線<br><br>
+        <b>解法：</b><br>
+        ① 按「🔄 重新整理」重試（程式會自動切換備用 Proxy）<br>
+        ② 確認網路可以連上 <code style="background:#1c2230;padding:2px 6px;border-radius:4px">finance.yahoo.com</code><br>
+        ③ 若在公司網路，可改用手機熱點開啟本頁面
       </div>`;
   }
   updateStats();
