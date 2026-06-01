@@ -175,7 +175,7 @@
 </head>
 <body>
 
-<!-- ── Header ──────────────────────────────────────────── -->
+<!-- ── Header ────────────────────────────────────────────────────── -->
 <header>
   <h1>📈 台股電子股 <span>即時監控</span></h1>
   <div style="display:flex;gap:12px;align-items:center">
@@ -188,7 +188,7 @@
 </header>
 <div class="progress-bar"><div class="progress-fill" id="progress" style="width:0%"></div></div>
 
-<!-- ── Controls ────────────────────────────────────────── -->
+<!-- ── Controls ──────────────────────────────────────────────────── -->
 <div class="controls">
   <div class="industry-tabs" id="tabs"></div>
   <div class="sort-group">
@@ -208,7 +208,7 @@
   </div>
 </div>
 
-<!-- ── Stats Bar ───────────────────────────────────────── -->
+<!-- ── Stats Bar ─────────────────────────────────────────────────── -->
 <div class="stats-bar" id="stats-bar" style="display:none">
   <div class="stat-item"><span class="stat-label">監控</span><span class="stat-val" id="s-total">—</span></div>
   <div class="stat-item"><span class="stat-label">上漲</span><span class="stat-val" style="color:var(--green)" id="s-up">—</span></div>
@@ -218,12 +218,12 @@
   <div class="stat-item"><span class="stat-label">平均RSI</span><span class="stat-val" id="s-rsi">—</span></div>
 </div>
 
-<!-- ── Card Grid ───────────────────────────────────────── -->
+<!-- ── Card Grid ─────────────────────────────────────────────────── -->
 <div class="grid" id="grid">
   <div id="loading-msg"><span class="spinner"></span>正在載入台股資料，請稍候...</div>
 </div>
 
-<!-- ── Modal ─────────────────────────────────────────── -->
+<!-- ── Modal ─────────────────────────────────────────────────────── -->
 <div class="modal-overlay" id="modal" onclick="if(event.target===this)closeModal()">
   <div class="modal">
     <div class="modal-header">
@@ -252,13 +252,13 @@ const STOCKS = [
   // 24 半導體
   {code:'2330', name:'台積電',    ind:'24'}, {code:'2303', name:'聯電',      ind:'24'},
   {code:'2454', name:'聯發科',    ind:'24'}, {code:'3034', name:'聯詠',      ind:'24'},
-  {code:'2379', name:'瑞昕',      ind:'24'}, {code:'2408', name:'南亞科',    ind:'24'},
+  {code:'2379', name:'瑞昱',      ind:'24'}, {code:'2408', name:'南亞科',    ind:'24'},
   {code:'2344', name:'華邦電',    ind:'24'}, {code:'3711', name:'日月光投控',ind:'24'},
   {code:'5347', name:'世界',      ind:'24'}, {code:'3443', name:'創意',      ind:'24'},
   {code:'6533', name:'晶心科',    ind:'24'}, {code:'2337', name:'旺宏',      ind:'24'},
   // 25 電腦及週邊
   {code:'2317', name:'鴻海',      ind:'25'}, {code:'2382', name:'廣達',      ind:'25'},
-  {code:'2357', name:'華經',      ind:'25'}, {code:'2353', name:'宏祀',      ind:'25'},
+  {code:'2357', name:'華碩',      ind:'25'}, {code:'2353', name:'宏碁',      ind:'25'},
   {code:'3231', name:'緯創',      ind:'25'}, {code:'2301', name:'光寶科',    ind:'25'},
   {code:'2356', name:'英業達',    ind:'25'}, {code:'2376', name:'技嘉',      ind:'25'},
   // 26 光電
@@ -270,7 +270,7 @@ const STOCKS = [
   {code:'2498', name:'宏達電',    ind:'27'}, {code:'3706', name:'神達',      ind:'27'},
   // 28 電子零組件
   {code:'2308', name:'台達電',    ind:'28'}, {code:'2327', name:'國巨',      ind:'28'},
-  {code:'3189', name:'景穩',      ind:'28'}, {code:'2393', name:'億光',      ind:'28'},
+  {code:'3189', name:'景碩',      ind:'28'}, {code:'2393', name:'億光',      ind:'28'},
   {code:'6116', name:'彩晶',      ind:'28'},
   // 29 電子設備
   {code:'2395', name:'研華',      ind:'29'}, {code:'6415', name:'矽力-KY',   ind:'29'},
@@ -279,7 +279,7 @@ const STOCKS = [
   {code:'2392', name:'正崴',      ind:'30'}, {code:'5263', name:'委來好',    ind:'30'},
   {code:'8299', name:'群聯',      ind:'30'},
   // 31 其他電子
-  {code:'5269', name:'祥穩',      ind:'31'}, {code:'3105', name:'穩懸',      ind:'31'},
+  {code:'5269', name:'祥碩',      ind:'31'}, {code:'3105', name:'穩懋',      ind:'31'},
   {code:'6446', name:'藥華藥',    ind:'31'},
 ];
 
@@ -338,58 +338,37 @@ const SIGNAL_LABEL = { buy: '🟢 買進', sell: '🔴 賣出', watch: '🟡 觀
 const SIGNAL_CLASS = { buy: 'buy', sell: 'sell', watch: 'watch', na: 'na' };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Yahoo Finance API — 多 Proxy 同時競速（Promise.any）
+// Yahoo Finance API — JSONP（script 標籤天生無 CORS，不需 Proxy）
 // ─────────────────────────────────────────────────────────────────────────────
 
-// 記住本次 session 最快的 proxy，後續優先使用
-let _bestProxy = null;
+function fetchJSONP(code) {
+  return new Promise((resolve, reject) => {
+    const cbName = `_yf_cb_${code}`;
+    const url = `https://query1.finance.yahoo.com/v8/finance/chart/${code}.TW` +
+                `?interval=1d&range=3mo&includePrePost=false&callback=${cbName}`;
 
-const PROXY_MAKERS = [
-  url => `https://corsproxy.io/?${encodeURIComponent(url)}`,
-  url => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
-  url => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`,
-  url => url,   // 直連（GitHub Pages HTTPS 有機會成功）
-];
+    const timer = setTimeout(() => { cleanup(); reject(new Error('timeout')); }, 12000);
 
-async function _tryOneProxy(makeUrl, yahooUrl) {
-  const res = await fetch(makeUrl(yahooUrl), { signal: AbortSignal.timeout(9000) });
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  const text = await res.text();
-  let parsed;
-  try { parsed = JSON.parse(text); } catch { throw new Error('not JSON'); }
-  // allorigins /get 格式：{ contents: "..." }
-  if (parsed?.contents) return JSON.parse(parsed.contents);
-  // 驗證是否為 Yahoo Finance 格式
-  if (!parsed?.chart) throw new Error('not yahoo format');
-  return parsed;
-}
+    function cleanup() {
+      clearTimeout(timer);
+      delete window[cbName];
+      const el = document.getElementById(`_jscript_${code}`);
+      if (el) el.parentNode.removeChild(el);
+    }
 
-async function fetchWithProxy(yahooUrl) {
-  // 若已知最快的 proxy，先單獨快速嘗試
-  if (_bestProxy !== null) {
-    try {
-      const result = await _tryOneProxy(PROXY_MAKERS[_bestProxy], yahooUrl);
-      if (result) return result;
-    } catch (_) { _bestProxy = null; }  // 失效則重新競速
-  }
+    window[cbName] = function(data) { cleanup(); resolve(data); };
 
-  // 所有 proxy 同時競速，取最快成功的
-  const race = PROXY_MAKERS.map((makeUrl, idx) =>
-    _tryOneProxy(makeUrl, yahooUrl).then(data => ({ data, idx }))
-  );
-  try {
-    const { data, idx } = await Promise.any(race);
-    _bestProxy = idx;   // 記住贏家
-    return data;
-  } catch {
-    return null;
-  }
+    const script = document.createElement('script');
+    script.id = `_jscript_${code}`;
+    script.src = url;
+    script.onerror = function() { cleanup(); reject(new Error('load error')); };
+    document.head.appendChild(script);
+  });
 }
 
 async function fetchChart(code) {
-  const sym = `${code}.TW`;
-  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${sym}?interval=1d&range=3mo&includePrePost=false`;
-  const json = await fetchWithProxy(url);
+  let json;
+  try { json = await fetchJSONP(code); } catch (_) { return null; }
   if (!json) return null;
   try {
     const result = json.chart.result[0];
