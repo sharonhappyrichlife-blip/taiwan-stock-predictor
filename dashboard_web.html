@@ -423,16 +423,15 @@ async function refreshAll() {
   if (errors.length > 0 && Object.keys(state.data).length === 0) {
     document.getElementById('grid').innerHTML = `
       <div id="error-msg">
-        <b style="color:#f87171;font-size:15px">⚠️ 無法連線至 Yahoo Finance API</b><br><br>
-        常見原因：<br>
-        1. <b>CORS 限制</b>：從 <code>file://</code> 開啟本機 HTML 時，部分瀏覽器會封鎖跨域請求<br>
-        2. <b>網路限制</b>：防火牆封鎖了外部 API<br><br>
-        <b>解法（任選其一）：</b><br>
-        ① 用 Python 啟動本機伺服器（推薦）：<br>
-        &nbsp;&nbsp;<code style="background:#1c2230;padding:4px 8px;border-radius:4px">python -m http.server 8080</code>
-        → 開啟 <a href="http://localhost:8080/dashboard_web.html" style="color:#7dd3fc">http://localhost:8080/dashboard_web.html</a><br><br>
-        ② Chrome 加上啟動參數：<code style="background:#1c2230;padding:4px 8px;border-radius:4px">--disable-web-security --user-data-dir=/tmp/chrome</code><br>
-        ③ 使用 Firefox（對 file:// 的 CORS 限制較寬鬆）
+        <b style="color:#f87171;font-size:15px">⚠️ 無法取得 Yahoo Finance 資料</b><br><br>
+        可能原因：<br>
+        1. <b>網路問題</b>：請確認網路連線正常<br>
+        2. <b>Yahoo Finance 暫時無回應</b>：請稍後按「🔄 重新整理」再試<br>
+        3. <b>防火牆或 VPN</b>：可能封鎖了 CORS Proxy 的連線<br><br>
+        <b>解法：</b><br>
+        ① 按「🔄 重新整理」重試（程式會自動切換備用 Proxy）<br>
+        ② 確認網路可以連上 <code style="background:#1c2230;padding:2px 6px;border-radius:4px">finance.yahoo.com</code><br>
+        ③ 若在公司網路，可改用手機熱點開啟本頁面
       </div>`;
   }
   updateStats();
