@@ -1,13 +1,75 @@
 """
 config.py
 
-集中管理股票清單與產業設定。
+集中管理股票清單、產業設定與 Email 通知設定。
 stock_list.json 由 fetch_stock_list.py 產生；
 若檔案不存在則回退到內建的精簡清單，並印出提示。
+
+Email 設定優先從環境變數或 .env 讀取，其次從此檔案的預設值。
+請將真實憑證填入專案根目錄的 .env，不要硬寫在此檔案。
 """
 
 import json
+import os
 from pathlib import Path
+
+# 嘗試載入 .env（若安裝了 python-dotenv）
+try:
+    from dotenv import load_dotenv
+    load_dotenv(Path(__file__).parent.parent / ".env")
+except ImportError:
+    pass
+
+
+# ── Email 通知設定 ────────────────────────────────────────────────────────────
+class EmailConfig:
+    """Gmail SMTP 設定。從環境變數讀取，方便 CI/容器部署。"""
+
+    # 寄件者 Gmail 帳號（完整地址，例如 yourname@gmail.com）
+    SENDER: str = os.getenv("GMAIL_SENDER", "your_gmail@gmail.com")
+
+    # Gmail 應用程式密碼（非登入密碼）
+    # 產生方式：Google 帳號 → 安全性 → 兩步驟驗證 → 應用程式密碼
+    APP_PASSWORD: str = os.getenv("GMAIL_APP_PASSWORD", "your_app_password_here")
+
+    # 收件者（多個收件者以逗號分隔，例如 "a@x.com,b@y.com"）
+    RECIPIENTS: str = os.getenv("GMAIL_RECIPIENTS", "recipient@example.com")
+
+    # SMTP 伺服器（Gmail 固定值，一般不需修改）
+    SMTP_HOST: str = "smtp.gmail.com"
+    SMTP_PORT: int = 587
+
+    @classmethod
+    def recipient_list(cls) -> list[str]:
+        return [r.strip() for r in cls.RECIPIENTS.split(",") if r.strip()]
+
+    @classmethod
+    def is_configured(cls) -> bool:
+        """檢查是否已填入真實設定（非預設佔位值）。"""
+        return (
+            cls.SENDER != "your_gmail@gmail.com"
+            and cls.APP_PASSWORD != "your_app_password_here"
+            and "example.com" not in cls.RECIPIENTS
+        )
+
+
+# ── 監控設定 ──────────────────────────────────────────────────────────────────
+class MonitorConfig:
+    # 每次輪詢間隔（秒）
+    POLL_INTERVAL_SECONDS: int = int(os.getenv("MONITOR_POLL_INTERVAL", "60"))
+
+    # 單日漲跌幅觸發閾值（%）
+    ALERT_RISE_PCT: float = float(os.getenv("MONITOR_ALERT_RISE_PCT", "5.0"))
+    ALERT_FALL_PCT: float = float(os.getenv("MONITOR_ALERT_FALL_PCT", "-5.0"))
+
+    # 每日摘要寄送時間（24h 格式，台灣收盤後）
+    DAILY_SUMMARY_TIME: str = os.getenv("MONITOR_SUMMARY_TIME", "14:00")
+
+    # 每日摘要排行榜顯示前 N 名
+    SUMMARY_TOP_N: int = int(os.getenv("MONITOR_SUMMARY_TOP_N", "10"))
+
+    # 警報批次等待秒數（收集同時觸發的多支股票，合併成一封信）
+    BATCH_WINDOW_SECONDS: int = int(os.getenv("MONITOR_BATCH_WINDOW", "30"))
 
 _STOCK_LIST_PATH = Path(__file__).parent.parent / "stock_list.json"
 
