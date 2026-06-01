@@ -182,7 +182,7 @@
     <button id="refresh-btn" onclick="refreshAll()">🔄 重新整理</button>
     <div class="header-meta">
       <div>更新時間：<span id="last-update">—</span></div>
-      <div>資料來源：Yahoo Finance</div>
+      <div>資料來源：FinMind Taiwan Stock API</div>
     </div>
   </div>
 </header>
@@ -338,56 +338,47 @@ const SIGNAL_LABEL = { buy: '🟢 買進', sell: '🔴 賣出', watch: '🟡 觀
 const SIGNAL_CLASS = { buy: 'buy', sell: 'sell', watch: 'watch', na: 'na' };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Yahoo Finance API — JSONP（script 標籤天生無 CORS，不需 Proxy）
+// FinMind Taiwan Stock API — 完整支援 CORS，無需 Proxy 或 JSONP
+// https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockPrice
 // ─────────────────────────────────────────────────────────────────────────────
 
-function fetchJSONP(code) {
-  return new Promise((resolve, reject) => {
-    const cbName = `_yf_cb_${code}`;
-    const url = `https://query1.finance.yahoo.com/v8/finance/chart/${code}.TW` +
-                `?interval=1d&range=3mo&includePrePost=false&callback=${cbName}`;
-
-    const timer = setTimeout(() => { cleanup(); reject(new Error('timeout')); }, 12000);
-
-    function cleanup() {
-      clearTimeout(timer);
-      delete window[cbName];
-      const el = document.getElementById(`_jscript_${code}`);
-      if (el) el.parentNode.removeChild(el);
-    }
-
-    window[cbName] = function(data) { cleanup(); resolve(data); };
-
-    const script = document.createElement('script');
-    script.id = `_jscript_${code}`;
-    script.src = url;
-    script.onerror = function() { cleanup(); reject(new Error('load error')); };
-    document.head.appendChild(script);
-  });
+function _startDate() {
+  // 取近 5 個月資料，確保 MA20 / RSI(14) 計算有足夠的交易日
+  const d = new Date();
+  d.setMonth(d.getMonth() - 5);
+  return d.toISOString().slice(0, 10);
 }
 
 async function fetchChart(code) {
+  const url = `https://api.finmindtrade.com/api/v4/data` +
+              `?dataset=TaiwanStockPrice&data_id=${code}&start_date=${_startDate()}&token=`;
   let json;
-  try { json = await fetchJSONP(code); } catch (_) { return null; }
-  if (!json) return null;
   try {
-    const result = json.chart.result[0];
-    const closes = result.indicators.quote[0].close.map(v => v ?? null).filter(v => v !== null);
-    const timestamps = result.timestamp;
-    const meta = result.meta;
-    const price = meta.regularMarketPrice ?? closes[closes.length - 1];
-    const prevClose = meta.chartPreviousClose ?? closes[closes.length - 2];
-    const dates = timestamps.map(t => {
-      const d = new Date(t * 1000);
-      return `${d.getMonth() + 1}/${d.getDate()}`;
-    });
-    const ma5  = calcMA(closes, 5);
-    const ma20 = calcMA(closes, 20);
-    const rsi  = calcRSI(closes, 14);
-    const bias = calcBias(price, ma20);
-    const changePct = prevClose ? (price - prevClose) / prevClose * 100 : 0;
-    return { price, prevClose, changePct, ma5, ma20, rsi, bias, closes, dates };
+    const res = await fetch(url, { signal: AbortSignal.timeout(15000) });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    json = await res.json();
   } catch (_) { return null; }
+
+  if (!json?.data?.length) return null;
+
+  // FinMind 回傳：[{ date, stock_id, open, max, min, close, spread, Trading_Volume, ... }]
+  // spread = 當日收盤 - 前日收盤（漲跌價差）
+  const rows  = json.data;                          // 已按日期升冪排序
+  const closes = rows.map(r => Number(r.close));
+  const dates  = rows.map(r => r.date.slice(5).replace('-', '/'));  // "MM/DD"
+
+  const last      = rows[rows.length - 1];
+  const price     = Number(last.close);
+  const spread    = Number(last.spread);            // 當日漲跌點數
+  const prevClose = price - spread;
+  const changePct = prevClose !== 0 ? (spread / prevClose) * 100 : 0;
+
+  const ma5  = calcMA(closes, 5);
+  const ma20 = calcMA(closes, 20);
+  const rsi  = calcRSI(closes, 14);
+  const bias = calcBias(price, ma20);
+
+  return { price, prevClose, changePct, ma5, ma20, rsi, bias, closes, dates };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -399,10 +390,10 @@ async function refreshAll() {
   document.getElementById('refresh-btn').disabled = true;
   document.getElementById('refresh-btn').textContent = '載入中...';
   document.getElementById('progress').style.width = '0%';
-  document.getElementById('grid').innerHTML = '<div id="loading-msg"><span class="spinner"></span>正在向 Yahoo Finance 抓取資料...</div>';
+  document.getElementById('grid').innerHTML = '<div id="loading-msg"><span class="spinner"></span>正在從 FinMind API 載入台股資料...</div>';
 
   let done = 0;
-  const BATCH = 3;   // 較小批次，減少同時對 proxy 的請求量
+  const BATCH = 2;   // FinMind 無 token 建議小批次，避免觸發速率限制
   const errors = [];
 
   for (let i = 0; i < STOCKS.length; i += BATCH) {
@@ -415,6 +406,7 @@ async function refreshAll() {
       document.getElementById('progress').style.width = `${Math.round(done / STOCKS.length * 100)}%`;
     }));
     renderCards();   // 邊載入邊渲染
+    if (i + BATCH < STOCKS.length) await new Promise(r => setTimeout(r, 300)); // 批次間隔，避免觸發速率限制
   }
 
   document.getElementById('progress').style.width = '100%';
@@ -427,15 +419,15 @@ async function refreshAll() {
   if (Object.keys(state.data).length === 0) {
     document.getElementById('grid').innerHTML = `
       <div id="error-msg">
-        <b style="color:#f87171;font-size:15px">⚠️ 無法取得 Yahoo Finance 資料</b><br><br>
+        <b style="color:#f87171;font-size:15px">⚠️ 無法取得 FinMind API 資料</b><br><br>
         可能原因：<br>
         1. <b>網路問題</b>：請確認網路連線正常<br>
-        2. <b>Yahoo Finance 暫時無回應</b>：請稍後按「🔄 重新整理」再試<br>
-        3. <b>防火牆或 VPN</b>：可能封鎖了 CORS Proxy 的連線<br><br>
+        2. <b>FinMind API 速率限制</b>：請稍等 30 秒後按「🔄 重新整理」再試<br>
+        3. <b>防火牆封鎖</b>：確認可以連上 <code style="background:#1c2230;padding:2px 6px;border-radius:4px">api.finmindtrade.com</code><br><br>
         <b>解法：</b><br>
-        ① 按「🔄 重新整理」重試（程式會自動切換備用 Proxy）<br>
-        ② 確認網路可以連上 <code style="background:#1c2230;padding:2px 6px;border-radius:4px">finance.yahoo.com</code><br>
-        ③ 若在公司網路，可改用手機熱點開啟本頁面
+        ① 按「🔄 重新整理」重試<br>
+        ② 若持續失敗，可免費註冊 FinMind 取得 token 以提高限制<br>
+        &nbsp;&nbsp;&nbsp;<a href="https://finmindtrade.com/" target="_blank" style="color:#60a5fa">finmindtrade.com</a> → 免費註冊 → API Token
       </div>`;
   }
   updateStats();
