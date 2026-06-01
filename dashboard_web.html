@@ -338,58 +338,37 @@ const SIGNAL_LABEL = { buy: '🟢 買進', sell: '🔴 賣出', watch: '🟡 觀
 const SIGNAL_CLASS = { buy: 'buy', sell: 'sell', watch: 'watch', na: 'na' };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Yahoo Finance API — 多 Proxy 同時競速（Promise.any）
+// Yahoo Finance API — JSONP（script 標籤天生無 CORS，不需 Proxy）
 // ─────────────────────────────────────────────────────────────────────────────
 
-// 記住本次 session 最快的 proxy，後續優先使用
-let _bestProxy = null;
+function fetchJSONP(code) {
+  return new Promise((resolve, reject) => {
+    const cbName = `_yf_cb_${code}`;
+    const url = `https://query1.finance.yahoo.com/v8/finance/chart/${code}.TW` +
+                `?interval=1d&range=3mo&includePrePost=false&callback=${cbName}`;
 
-const PROXY_MAKERS = [
-  url => `https://corsproxy.io/?${encodeURIComponent(url)}`,
-  url => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
-  url => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`,
-  url => url,   // 直連（GitHub Pages HTTPS 有機會成功）
-];
+    const timer = setTimeout(() => { cleanup(); reject(new Error('timeout')); }, 12000);
 
-async function _tryOneProxy(makeUrl, yahooUrl) {
-  const res = await fetch(makeUrl(yahooUrl), { signal: AbortSignal.timeout(9000) });
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  const text = await res.text();
-  let parsed;
-  try { parsed = JSON.parse(text); } catch { throw new Error('not JSON'); }
-  // allorigins /get 格式：{ contents: "..." }
-  if (parsed?.contents) return JSON.parse(parsed.contents);
-  // 驗證是否為 Yahoo Finance 格式
-  if (!parsed?.chart) throw new Error('not yahoo format');
-  return parsed;
-}
+    function cleanup() {
+      clearTimeout(timer);
+      delete window[cbName];
+      const el = document.getElementById(`_jscript_${code}`);
+      if (el) el.parentNode.removeChild(el);
+    }
 
-async function fetchWithProxy(yahooUrl) {
-  // 若已知最快的 proxy，先單獨快速嘗試
-  if (_bestProxy !== null) {
-    try {
-      const result = await _tryOneProxy(PROXY_MAKERS[_bestProxy], yahooUrl);
-      if (result) return result;
-    } catch (_) { _bestProxy = null; }  // 失效則重新競速
-  }
+    window[cbName] = function(data) { cleanup(); resolve(data); };
 
-  // 所有 proxy 同時競速，取最快成功的
-  const race = PROXY_MAKERS.map((makeUrl, idx) =>
-    _tryOneProxy(makeUrl, yahooUrl).then(data => ({ data, idx }))
-  );
-  try {
-    const { data, idx } = await Promise.any(race);
-    _bestProxy = idx;   // 記住贏家
-    return data;
-  } catch {
-    return null;
-  }
+    const script = document.createElement('script');
+    script.id = `_jscript_${code}`;
+    script.src = url;
+    script.onerror = function() { cleanup(); reject(new Error('load error')); };
+    document.head.appendChild(script);
+  });
 }
 
 async function fetchChart(code) {
-  const sym = `${code}.TW`;
-  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${sym}?interval=1d&range=3mo&includePrePost=false`;
-  const json = await fetchWithProxy(url);
+  let json;
+  try { json = await fetchJSONP(code); } catch (_) { return null; }
   if (!json) return null;
   try {
     const result = json.chart.result[0];
