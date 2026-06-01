@@ -9,7 +9,8 @@ import os
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "src"))
 
-from data_fetcher import fetch_stock_data, TAIWAN_STOCKS, generate_mock_sentiment
+from data_fetcher import fetch_stock_data, generate_mock_sentiment
+from config import load_stock_list, get_stocks_by_industry, stock_list_metadata, INDUSTRY_NAMES
 from technical_indicators import add_all_indicators, get_signal_summary
 from granger_analysis import (
     sentiment_stock_granger, cross_correlation_analysis,
@@ -38,12 +39,39 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
+# ── 載入股票清單 ──────────────────────────────────────────────────────────────
+_all_stocks = load_stock_list()
+_meta = stock_list_metadata()
+
 # ── Sidebar ───────────────────────────────────────────────────────────────────
 st.sidebar.title("⚙️ 設定")
-stock_options = {f"{code} {name}": code for code, name in TAIWAN_STOCKS.items()}
+
+# 產業篩選
+industry_options = {"全部": ""} | {f"{k} {v}": k for k, v in INDUSTRY_NAMES.items()}
+selected_industry_display = st.sidebar.selectbox("產業別篩選", list(industry_options.keys()), index=0)
+selected_industry = industry_options[selected_industry_display]
+
+filtered_stocks = (
+    get_stocks_by_industry(selected_industry) if selected_industry else _all_stocks
+)
+
+stock_options = {f"{s['code']} {s['name']}": s["code"] for s in filtered_stocks}
+if not stock_options:
+    st.sidebar.warning("此產業目前無股票資料")
+    stock_options = {f"{s['code']} {s['name']}": s["code"] for s in _all_stocks[:10]}
+
 selected_display = st.sidebar.selectbox("選擇股票", list(stock_options.keys()), index=0)
 selected_stock = stock_options[selected_display]
-stock_name = TAIWAN_STOCKS[selected_stock]
+_stock_info = next((s for s in _all_stocks if s["code"] == selected_stock), {})
+stock_name = _stock_info.get("name", selected_stock)
+
+# 清單來源資訊
+_src = _meta.get("source", "builtin")
+_gen = _meta.get("generated_at", "")
+if _src == "stock_list.json":
+    st.sidebar.caption(f"清單來源：stock_list.json\n共 {_meta['total']} 支 | {_gen[:10]}")
+else:
+    st.sidebar.caption("使用內建精簡清單\n執行 `python fetch_stock_list.py` 更新")
 
 period = st.sidebar.selectbox("資料期間", ["3mo", "6mo", "1y", "2y"], index=2)
 max_granger_lag = st.sidebar.slider("格蘭傑最大落後期數", 1, 10, 5)

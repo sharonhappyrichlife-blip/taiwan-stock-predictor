@@ -1,0 +1,9 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.env
+.venv/
+venv/
+*.log
+.DS_Store
+# stock_list.json 刻意不忽略，讓它可以被 commit 進 repo

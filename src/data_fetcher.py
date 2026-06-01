@@ -1,21 +1,13 @@
-import yfinance as yf
-import pandas as pd
-import numpy as np
-from datetime import datetime, timedelta
 import time
 
-TAIWAN_STOCKS = {
-    "2330": "台積電",
-    "2317": "鴻海",
-    "2454": "聯發科",
-    "2308": "台達電",
-    "2382": "廣達",
-    "2881": "富邦金",
-    "2882": "國泰金",
-    "1301": "台塑",
-    "1303": "南亞",
-    "2412": "中華電",
-}
+import numpy as np
+import pandas as pd
+import yfinance as yf
+
+from .config import get_stock_dict, load_stock_list
+
+# 動態從 stock_list.json 載入（若不存在則用內建清單）
+TAIWAN_STOCKS: dict[str, str] = get_stock_dict()
 
 TAIEX_SYMBOL = "^TWII"
 
@@ -46,14 +38,21 @@ def fetch_multiple_stocks(symbols: list, period: str = "1y") -> dict:
     return result
 
 
+def get_all_stocks() -> list[dict]:
+    """回傳完整股票清單（含產業資訊）。"""
+    return load_stock_list()
+
+
 def generate_mock_sentiment(dates: pd.DatetimeIndex, seed: int = 42) -> pd.DataFrame:
     """Generate synthetic sentiment scores for demonstration."""
     np.random.seed(seed)
     n = len(dates)
-    # Simulate AR(1) process for realistic sentiment dynamics
     sentiment = np.zeros(n)
     sentiment[0] = 0.0
     for i in range(1, n):
-        sentiment[i] = 0.7 * sentiment[i-1] + np.random.normal(0, 0.3)
+        sentiment[i] = 0.7 * sentiment[i - 1] + np.random.normal(0, 0.3)
     sentiment = (sentiment - sentiment.min()) / (sentiment.max() - sentiment.min()) * 2 - 1
-    return pd.DataFrame({"sentiment": sentiment, "volume_sentiment": np.random.uniform(-1, 1, n)}, index=dates)
+    return pd.DataFrame(
+        {"sentiment": sentiment, "volume_sentiment": np.random.uniform(-1, 1, n)},
+        index=dates,
+    )
