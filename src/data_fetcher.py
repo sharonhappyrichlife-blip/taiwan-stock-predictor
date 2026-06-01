@@ -4,7 +4,10 @@ import numpy as np
 import pandas as pd
 import yfinance as yf
 
-from .config import get_stock_dict, load_stock_list
+try:
+    from .config import get_stock_dict, load_stock_list
+except ImportError:
+    from config import get_stock_dict, load_stock_list
 
 # 動態從 stock_list.json 載入（若不存在則用內建清單）
 TAIWAN_STOCKS: dict[str, str] = get_stock_dict()

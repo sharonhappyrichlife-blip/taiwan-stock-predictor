@@ -12,7 +12,10 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from zoneinfo import ZoneInfo
 
-from .config import EmailConfig
+try:
+    from .config import EmailConfig
+except ImportError:
+    from config import EmailConfig
 
 TZ_TAIPEI = ZoneInfo("Asia/Taipei")
 
