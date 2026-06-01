@@ -147,11 +147,13 @@
   .modal-close { background: none; border: none; color: var(--muted); font-size: 22px; cursor: pointer; line-height: 1; padding: 2px 6px; }
   .modal-close:hover { color: var(--text); }
   .modal-body { padding: 20px 22px; }
-  .modal-kpis { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin-bottom: 20px; }
-  .kpi { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; }
+  .modal-kpis { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin-bottom: 18px; }
+  .kpi { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; }
   .kpi-label { font-size: 11px; color: var(--muted); margin-bottom: 4px; }
-  .kpi-val   { font-size: 20px; font-weight: 700; }
-  .chart-wrap { position: relative; height: 300px; }
+  .kpi-val   { font-size: 18px; font-weight: 700; }
+  .chart-section { margin-bottom: 4px; }
+  .chart-section-label { font-size: 11px; color: var(--muted); font-weight: 600; letter-spacing: .5px; text-transform: uppercase; margin-bottom: 4px; padding: 0 2px; }
+  .chart-wrap { position: relative; }
   .modal-indicators { display: grid; grid-template-columns: repeat(2,1fr); gap: 10px; margin-top: 18px; }
   .modal-ind { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; }
   .modal-ind-label { font-size: 12px; color: var(--muted); margin-bottom: 4px; }
@@ -227,12 +229,26 @@
 <div class="modal-overlay" id="modal" onclick="if(event.target===this)closeModal()">
   <div class="modal">
     <div class="modal-header">
-      <div class="modal-title" id="modal-title">—</div>
+      <div>
+        <div class="modal-title" id="modal-title">—</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:3px" id="modal-subtitle"></div>
+      </div>
       <button class="modal-close" onclick="closeModal()">✕</button>
     </div>
     <div class="modal-body">
       <div class="modal-kpis" id="modal-kpis"></div>
-      <div class="chart-wrap"><canvas id="modal-chart"></canvas></div>
+      <div class="chart-section">
+        <div class="chart-section-label">📈 收盤價走勢 + MA5 / MA20</div>
+        <div class="chart-wrap" style="height:200px"><canvas id="chart-price"></canvas></div>
+      </div>
+      <div class="chart-section">
+        <div class="chart-section-label">📊 成交量（張）</div>
+        <div class="chart-wrap" style="height:90px"><canvas id="chart-volume"></canvas></div>
+      </div>
+      <div class="chart-section">
+        <div class="chart-section-label">〰️ RSI (14)</div>
+        <div class="chart-wrap" style="height:90px"><canvas id="chart-rsi"></canvas></div>
+      </div>
       <div class="modal-indicators" id="modal-inds"></div>
     </div>
   </div>
@@ -287,10 +303,10 @@ const STOCKS = [
 // 狀態管理
 // ─────────────────────────────────────────────────────────────────────────────
 const state = {
-  data: {},           // code → {price, prevClose, changePct, ma5, ma20, rsi, bias, closes, dates}
+  data: {},           // code → {price, prevClose, changePct, ma5, ma20, rsi, bias, closes, dates, highs, lows, volumes}
   activeInd: 'all',
   loading: false,
-  chartInstance: null,
+  chartInstances: [], // 最多 3 個：price, volume, rsi
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -315,6 +331,26 @@ function calcRSI(closes, period = 14) {
   if (avgLoss === 0) return 100;
   const rs = avgGain / avgLoss;
   return 100 - 100 / (1 + rs);
+}
+
+// 計算完整 RSI 序列（Wilder 平滑法），回傳與 closes 等長的陣列
+function calcRSISeries(closes, period = 14) {
+  const result = new Array(closes.length).fill(null);
+  if (closes.length < period + 1) return result;
+  let avgGain = 0, avgLoss = 0;
+  for (let i = 1; i <= period; i++) {
+    const diff = closes[i] - closes[i - 1];
+    if (diff > 0) avgGain += diff; else avgLoss -= diff;
+  }
+  avgGain /= period; avgLoss /= period;
+  result[period] = avgLoss === 0 ? 100 : 100 - 100 / (1 + avgGain / avgLoss);
+  for (let i = period + 1; i < closes.length; i++) {
+    const diff = closes[i] - closes[i - 1];
+    avgGain = (avgGain * (period - 1) + (diff > 0 ? diff : 0)) / period;
+    avgLoss = (avgLoss * (period - 1) + (diff < 0 ? -diff : 0)) / period;
+    result[i] = avgLoss === 0 ? 100 : 100 - 100 / (1 + avgGain / avgLoss);
+  }
+  return result;
 }
 
 function calcBias(price, ma20) {
@@ -363,22 +399,29 @@ async function fetchChart(code) {
 
   // FinMind 回傳：[{ date, stock_id, open, max, min, close, spread, Trading_Volume, ... }]
   // spread = 當日收盤 - 前日收盤（漲跌價差）
-  const rows  = json.data;                          // 已按日期升冪排序
-  const closes = rows.map(r => Number(r.close));
-  const dates  = rows.map(r => r.date.slice(5).replace('-', '/'));  // "MM/DD"
+  const rows   = json.data;                          // 已按日期升冪排序
+  const closes  = rows.map(r => Number(r.close));
+  const highs   = rows.map(r => Number(r.max));
+  const lows    = rows.map(r => Number(r.min));
+  const volumes = rows.map(r => Number(r.Trading_Volume) / 1000); // 張（1000股=1張）
+  const dates   = rows.map(r => r.date.slice(5).replace('-', '/'));  // "MM/DD"
 
   const last      = rows[rows.length - 1];
   const price     = Number(last.close);
   const spread    = Number(last.spread);            // 當日漲跌點數
   const prevClose = price - spread;
   const changePct = prevClose !== 0 ? (spread / prevClose) * 100 : 0;
+  const dayHigh   = Number(last.max);
+  const dayLow    = Number(last.min);
+  const dayVol    = Number(last.Trading_Volume);
 
   const ma5  = calcMA(closes, 5);
   const ma20 = calcMA(closes, 20);
   const rsi  = calcRSI(closes, 14);
   const bias = calcBias(price, ma20);
 
-  return { price, prevClose, changePct, ma5, ma20, rsi, bias, closes, dates };
+  return { price, prevClose, changePct, ma5, ma20, rsi, bias,
+           closes, highs, lows, volumes, dates, dayHigh, dayLow, dayVol };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -582,107 +625,215 @@ function switchTab(ind) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Modal / Chart
+// Modal / Charts（3 圖：價格走勢、成交量、RSI）
 // ─────────────────────────────────────────────────────────────────────────────
+
+function _destroyCharts() {
+  state.chartInstances.forEach(c => c && c.destroy());
+  state.chartInstances = [];
+}
+
+function _chartDefaults(extraPlugins = {}) {
+  return {
+    responsive: true, maintainAspectRatio: false,
+    animation: false,
+    interaction: { intersect: false, mode: 'index' },
+    plugins: {
+      legend: { labels: { color: '#8b949e', boxWidth: 10, font: { size: 11 } } },
+      tooltip: {
+        backgroundColor: '#1c2230', borderColor: '#30363d', borderWidth: 1,
+        titleColor: '#e6edf3', bodyColor: '#8b949e',
+      },
+      ...extraPlugins,
+    },
+    scales: {
+      x: { ticks: { color: '#8b949e', maxTicksLimit: 8, font: { size: 10 } }, grid: { color: '#21262d' } },
+      y: { ticks: { color: '#8b949e', font: { size: 10 } }, grid: { color: '#21262d' } },
+    },
+  };
+}
+
 async function openModal(code) {
   const s = STOCKS.find(x => x.code === code);
-  const d = state.data[code];
   if (!s) return;
+  const d = state.data[code];
 
-  document.getElementById('modal-title').textContent = `${s.code} ${s.name}　${INDUSTRY_NAMES[s.ind] ?? ''}`;
+  document.getElementById('modal-title').textContent = `${s.code}　${s.name}`;
+  document.getElementById('modal-subtitle').textContent = `${INDUSTRY_NAMES[s.ind] ?? ''} · 近5個月走勢`;
   document.getElementById('modal').classList.add('open');
   document.body.style.overflow = 'hidden';
 
-  // KPIs
-  const signal = d ? getSignal(d.rsi, d.ma5, d.ma20, d.bias) : 'na';
-  const chgColor = !d ? '' : d.changePct >= 0 ? 'var(--green)' : 'var(--red)';
+  // ── KPIs（6格）────────────────────────────────────────────────────────────
+  const signal   = d ? getSignal(d.rsi, d.ma5, d.ma20, d.bias) : 'na';
+  const chgColor = !d ? 'var(--muted)' : d.changePct >= 0 ? 'var(--green)' : 'var(--red)';
+  const fmtVol   = v => v >= 1e4 ? (v / 1e4).toFixed(1) + '萬' : v.toLocaleString();
   document.getElementById('modal-kpis').innerHTML = `
-    <div class="kpi"><div class="kpi-label">現價</div><div class="kpi-val">${d ? d.price.toFixed(2) : '—'}</div></div>
-    <div class="kpi"><div class="kpi-label">漲跌幅</div><div class="kpi-val" style="color:${chgColor}">${d ? (d.changePct >= 0 ? '+' : '') + d.changePct.toFixed(2) + '%' : '—'}</div></div>
-    <div class="kpi"><div class="kpi-label">訊號</div><div class="kpi-val" style="font-size:15px">${SIGNAL_LABEL[signal]}</div></div>
-    <div class="kpi"><div class="kpi-label">RSI(14)</div><div class="kpi-val">${d?.rsi ? d.rsi.toFixed(1) : '—'}</div></div>
+    <div class="kpi">
+      <div class="kpi-label">最新收盤</div>
+      <div class="kpi-val">${d ? d.price.toFixed(2) : '—'}</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">漲跌幅</div>
+      <div class="kpi-val" style="color:${chgColor}">${d ? (d.changePct >= 0 ? '+' : '') + d.changePct.toFixed(2) + '%' : '—'}</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">訊號</div>
+      <div class="kpi-val" style="font-size:14px">${SIGNAL_LABEL[signal]}</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">當日最高</div>
+      <div class="kpi-val" style="color:#4ade80">${d?.dayHigh ? d.dayHigh.toFixed(2) : '—'}</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">當日最低</div>
+      <div class="kpi-val" style="color:#f87171">${d?.dayLow ? d.dayLow.toFixed(2) : '—'}</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">成交量（股）</div>
+      <div class="kpi-val" style="font-size:15px">${d?.dayVol ? fmtVol(d.dayVol) : '—'}</div>
+    </div>
   `;
 
-  // Indicators
+  // ── 技術指標摘要（4格）────────────────────────────────────────────────────
+  const rsiDesc = !d?.rsi ? '資料不足'
+    : d.rsi > 70 ? '超買區（>70）'
+    : d.rsi < 30 ? '超賣區（<30）'
+    : '中性區間';
   document.getElementById('modal-inds').innerHTML = `
     <div class="modal-ind">
       <div class="modal-ind-label">MA5 / MA20</div>
-      <div class="modal-ind-val" style="color:${d?.ma5 && d?.ma20 ? (d.ma5 > d.ma20 ? 'var(--green)' : 'var(--red)') : 'var(--muted)'}">
-        ${d?.ma5 ? d.ma5.toFixed(1) : '—'} / ${d?.ma20 ? d.ma20.toFixed(1) : '—'}
+      <div class="modal-ind-val" style="color:${d?.ma5&&d?.ma20?(d.ma5>d.ma20?'var(--green)':'var(--red)'):'var(--muted)'}">
+        ${d?.ma5?d.ma5.toFixed(1):'—'} / ${d?.ma20?d.ma20.toFixed(1):'—'}
       </div>
-      <div class="modal-ind-desc">${d?.ma5 && d?.ma20 ? (d.ma5 > d.ma20 ? '短線多頭排列' : '短線空頭排列') : '資料不足'}</div>
+      <div class="modal-ind-desc">${d?.ma5&&d?.ma20?(d.ma5>d.ma20?'多頭排列 ↑':'空頭排列 ↓'):'—'}</div>
     </div>
     <div class="modal-ind">
-      <div class="modal-ind-label">乖離率 (MA20)</div>
-      <div class="modal-ind-val" style="color:${d?.bias !== null ? (d.bias > 10 ? 'var(--red)' : d.bias < -5 ? 'var(--green)' : 'var(--text)') : 'var(--muted)'}">
-        ${d?.bias !== null && d?.bias !== undefined ? d.bias.toFixed(2) + '%' : '—'}
+      <div class="modal-ind-label">乖離率（MA20）</div>
+      <div class="modal-ind-val" style="color:${d?.bias!=null?(d.bias>10?'var(--red)':d.bias<-5?'var(--green)':'var(--text)'):'var(--muted)'}">
+        ${d?.bias!=null?d.bias.toFixed(2)+'%':'—'}
       </div>
-      <div class="modal-ind-desc">${d?.bias !== null && d?.bias !== undefined ? (d.bias > 10 ? '超買警戒' : d.bias < -5 ? '可能超賣' : '正常範圍') : ''}</div>
+      <div class="modal-ind-desc">${d?.bias!=null?(d.bias>10?'超買警戒':d.bias<-5?'可能超賣':'正常範圍'):'—'}</div>
+    </div>
+    <div class="modal-ind">
+      <div class="modal-ind-label">RSI (14)</div>
+      <div class="modal-ind-val" style="color:${d?.rsi?(d.rsi>70?'#f87171':d.rsi<30?'#4ade80':'var(--text)'):'var(--muted)'}">
+        ${d?.rsi?d.rsi.toFixed(1):'—'}
+      </div>
+      <div class="modal-ind-desc">${rsiDesc}</div>
+    </div>
+    <div class="modal-ind">
+      <div class="modal-ind-label">綜合訊號</div>
+      <div class="modal-ind-val" style="font-size:15px">${SIGNAL_LABEL[signal]}</div>
+      <div class="modal-ind-desc">${signal==='buy'?'MA 多排 + RSI 健康':signal==='sell'?'超買或空頭排列':'持續觀察'}</div>
     </div>
   `;
 
-  // Chart
-  if (state.chartInstance) { state.chartInstance.destroy(); state.chartInstance = null; }
-  const ctx = document.getElementById('modal-chart').getContext('2d');
+  // ── 銷毀舊圖 ───────────────────────────────────────────────────────────────
+  _destroyCharts();
+  if (!d?.closes?.length) return;
 
-  if (d?.closes?.length > 0) {
-    const closes = d.closes;
-    const labels = d.dates;
-    // 計算 MA 線
-    const ma5Line  = closes.map((_, i) => i >= 4  ? closes.slice(i-4,  i+1).reduce((a,b)=>a+b,0)/5  : null);
-    const ma20Line = closes.map((_, i) => i >= 19 ? closes.slice(i-19, i+1).reduce((a,b)=>a+b,0)/20 : null);
+  const closes  = d.closes;
+  const labels  = d.dates;
+  const volumes = d.volumes ?? [];
+  const rsiSeries = calcRSISeries(closes, 14);
 
-    state.chartInstance = new Chart(ctx, {
+  // MA 序列
+  const ma5Line  = closes.map((_, i) => i >= 4  ? closes.slice(i-4,  i+1).reduce((a,b)=>a+b)/5  : null);
+  const ma20Line = closes.map((_, i) => i >= 19 ? closes.slice(i-19, i+1).reduce((a,b)=>a+b)/20 : null);
+
+  // 成交量顏色（當日漲=綠、跌=紅）
+  const volColors = closes.map((c, i) =>
+    i === 0 ? 'rgba(96,165,250,.6)' : c >= closes[i-1] ? 'rgba(74,222,128,.5)' : 'rgba(248,113,113,.5)'
+  );
+
+  // ── 圖1：收盤價走勢 ───────────────────────────────────────────────────────
+  const opts1 = _chartDefaults();
+  opts1.scales.y.ticks.callback = v => v.toFixed(0);
+  opts1.plugins.tooltip.callbacks = {
+    label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y != null ? ctx.parsed.y.toFixed(2) : '—'}`
+  };
+  state.chartInstances.push(new Chart(
+    document.getElementById('chart-price').getContext('2d'), {
       type: 'line',
       data: {
         labels,
         datasets: [
-          {
-            label: '收盤價', data: closes,
-            borderColor: '#388bfd', backgroundColor: 'rgba(56,139,253,.08)',
-            borderWidth: 2, pointRadius: 0, fill: true, tension: 0.1,
-          },
-          {
-            label: 'MA5', data: ma5Line,
-            borderColor: '#fbbf24', borderWidth: 1.5, pointRadius: 0, spanGaps: true, tension: 0.1,
-          },
-          {
-            label: 'MA20', data: ma20Line,
-            borderColor: '#f87171', borderWidth: 1.5, pointRadius: 0, spanGaps: true, tension: 0.1,
-          },
+          { label: '收盤', data: closes, borderColor: '#388bfd', backgroundColor: 'rgba(56,139,253,.07)',
+            borderWidth: 2, pointRadius: 0, fill: true, tension: 0.1 },
+          { label: 'MA5',  data: ma5Line,  borderColor: '#fbbf24', borderWidth: 1.5,
+            pointRadius: 0, spanGaps: true, tension: 0.1 },
+          { label: 'MA20', data: ma20Line, borderColor: '#f87171', borderWidth: 1.5,
+            pointRadius: 0, spanGaps: true, tension: 0.1 },
         ],
       },
-      options: {
-        responsive: true, maintainAspectRatio: false,
-        interaction: { intersect: false, mode: 'index' },
-        plugins: {
-          legend: { labels: { color: '#8b949e', boxWidth: 14, font: { size: 12 } } },
-          tooltip: {
-            backgroundColor: '#1c2230', borderColor: '#30363d', borderWidth: 1,
-            titleColor: '#e6edf3', bodyColor: '#8b949e',
-            callbacks: {
-              label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y ? ctx.parsed.y.toFixed(2) : '—'}`
-            }
-          }
-        },
-        scales: {
-          x: { ticks: { color: '#8b949e', maxTicksLimit: 8, font: { size: 11 } }, grid: { color: '#21262d' } },
-          y: { ticks: { color: '#8b949e', font: { size: 11 } }, grid: { color: '#21262d' } },
-        },
-      },
-    });
-  } else {
-    ctx.fillStyle = '#8b949e';
-    ctx.font = '14px sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('圖表資料載入中...', ctx.canvas.width / 2, 150);
+      options: opts1,
+    }
+  ));
+
+  // ── 圖2：成交量 ───────────────────────────────────────────────────────────
+  if (volumes.length) {
+    const opts2 = _chartDefaults();
+    opts2.plugins.legend.display = false;
+    opts2.scales.y.ticks.callback = v => v >= 1000 ? (v/1000).toFixed(0)+'K' : v;
+    opts2.plugins.tooltip.callbacks = {
+      label: ctx => ` 成交量: ${ctx.parsed.y.toFixed(0)} 張`
+    };
+    state.chartInstances.push(new Chart(
+      document.getElementById('chart-volume').getContext('2d'), {
+        type: 'bar',
+        data: { labels, datasets: [{ label: '成交量', data: volumes, backgroundColor: volColors, borderWidth: 0 }] },
+        options: opts2,
+      }
+    ));
   }
+
+  // ── 圖3：RSI ──────────────────────────────────────────────────────────────
+  const opts3 = _chartDefaults({
+    annotation: undefined,   // 不用 annotation plugin，手動畫參考線
+  });
+  opts3.scales.y = {
+    ...opts3.scales.y,
+    min: 0, max: 100,
+    ticks: { color: '#8b949e', font: { size: 10 }, stepSize: 30 },
+    grid: { color: ctx => ctx.tick.value === 30 || ctx.tick.value === 70 ? '#388bfd44' : '#21262d' },
+  };
+  opts3.plugins.tooltip.callbacks = {
+    label: ctx => ` RSI: ${ctx.parsed.y != null ? ctx.parsed.y.toFixed(1) : '—'}`
+  };
+  const rsiColors = rsiSeries.map(v => v == null ? 'transparent'
+    : v > 70 ? '#f87171' : v < 30 ? '#4ade80' : '#60a5fa');
+  state.chartInstances.push(new Chart(
+    document.getElementById('chart-rsi').getContext('2d'), {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [
+          { label: 'RSI(14)', data: rsiSeries, borderColor: '#60a5fa', borderWidth: 1.5,
+            pointRadius: 0, spanGaps: false, tension: 0.1,
+            segment: { borderColor: ctx => {
+              const v = ctx.p1.parsed.y;
+              return v > 70 ? '#f87171' : v < 30 ? '#4ade80' : '#60a5fa';
+            }},
+          },
+          // 70 參考線
+          { label: '超買(70)', data: new Array(labels.length).fill(70),
+            borderColor: 'rgba(248,113,113,.35)', borderWidth: 1, borderDash: [4,3],
+            pointRadius: 0, fill: false },
+          // 30 參考線
+          { label: '超賣(30)', data: new Array(labels.length).fill(30),
+            borderColor: 'rgba(74,222,128,.35)', borderWidth: 1, borderDash: [4,3],
+            pointRadius: 0, fill: false },
+        ],
+      },
+      options: opts3,
+    }
+  ));
 }
 
 function closeModal() {
   document.getElementById('modal').classList.remove('open');
   document.body.style.overflow = '';
-  if (state.chartInstance) { state.chartInstance.destroy(); state.chartInstance = null; }
+  _destroyCharts();
 }
 
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
