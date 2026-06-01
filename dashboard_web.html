@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>台股電子股即時監控儀表板</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg:       #0d1117;
+    --surface:  #161b22;
+    --border:   #30363d;
+    --text:     #e6edf3;
+    --muted:    #8b949e;
+    --green:    #26a65b;
+    --green-bg: #0d2818;
+    --red:      #e74c3c;
+    --red-bg:   #2d0f0f;
+    --yellow:   #f39c12;
+    --yellow-bg:#2a1f00;
+    --blue:     #388bfd;
+    --radius:   10px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; min-height: 100vh; }
+
+  /* ── Header ── */
+  header {
+    background: linear-gradient(135deg, #1a237e 0%, #0d1b5e 100%);
+    padding: 16px 24px; display: flex; align-items: center; justify-content: space-between;
+    border-bottom: 1px solid #1e3a8a; position: sticky; top: 0; z-index: 100;
+  }
+  header h1 { font-size: 20px; font-weight: 700; letter-spacing: .5px; }
+  header h1 span { color: #7dd3fc; }
+  .header-meta { font-size: 12px; color: #93c5fd; text-align: right; line-height: 1.6; }
+  #refresh-btn {
+    background: #1e3a8a; border: 1px solid #3b5bdb; color: #93c5fd;
+    padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 13px;
+    transition: background .2s;
+  }
+  #refresh-btn:hover { background: #2d4db3; }
+  #refresh-btn:disabled { opacity: .5; cursor: not-allowed; }
+
+  /* ── Controls ── */
+  .controls { padding: 14px 24px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; border-bottom: 1px solid var(--border); background: var(--surface); }
+  .industry-tabs { display: flex; gap: 6px; flex-wrap: wrap; flex: 1; }
+  .tab {
+    padding: 5px 14px; border-radius: 20px; font-size: 13px; cursor: pointer;
+    background: var(--bg); border: 1px solid var(--border); color: var(--muted);
+    transition: all .2s; white-space: nowrap;
+  }
+  .tab.active { background: #1e3a8a; border-color: #388bfd; color: var(--text); }
+  .tab:hover:not(.active) { border-color: var(--muted); color: var(--text); }
+  .sort-group { display: flex; align-items: center; gap: 6px; }
+  .sort-group label { font-size: 12px; color: var(--muted); white-space: nowrap; }
+  select {
+    background: var(--bg); border: 1px solid var(--border); color: var(--text);
+    padding: 5px 10px; border-radius: 6px; font-size: 13px; cursor: pointer;
+  }
+  .signal-legend { display: flex; gap: 10px; font-size: 12px; color: var(--muted); align-items: center; }
+  .dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+
+  /* ── Stats bar ── */
+  .stats-bar { padding: 10px 24px; display: flex; gap: 24px; background: var(--bg); border-bottom: 1px solid var(--border); font-size: 13px; }
+  .stat-item { display: flex; gap: 6px; align-items: center; }
+  .stat-label { color: var(--muted); }
+  .stat-val { font-weight: 600; }
+
+  /* ── Grid ── */
+  .grid { padding: 20px 24px; display: grid; gap: 14px;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
+  #loading-msg { grid-column: 1/-1; text-align: center; padding: 60px; color: var(--muted); font-size: 15px; }
+  #error-msg { grid-column: 1/-1; background: #2d0f0f; border: 1px solid #7f1d1d; border-radius: var(--radius); padding: 20px 24px; font-size: 14px; line-height: 1.8; }
+
+  /* ── Stock Card ── */
+  .card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 14px 16px; cursor: pointer; transition: transform .15s, border-color .15s, box-shadow .15s;
+    position: relative; overflow: hidden;
+  }
+  .card:hover { transform: translateY(-2px); border-color: #388bfd; box-shadow: 0 4px 20px rgba(56,139,253,.15); }
+  .card::before {
+    content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; border-radius: var(--radius) 0 0 var(--radius);
+  }
+  .card.signal-buy::before { background: var(--green); }
+  .card.signal-sell::before { background: var(--red); }
+  .card.signal-watch::before { background: var(--yellow); }
+  .card.loading-card { opacity: .6; }
+
+  .card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+  .stock-id .code { font-size: 18px; font-weight: 700; }
+  .stock-id .name { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .industry-tag {
+    font-size: 10px; padding: 2px 8px; border-radius: 10px;
+    background: #1e3a8a22; border: 1px solid #388bfd44; color: #93c5fd;
+  }
+
+  .price-row { display: flex; align-items: baseline; gap: 10px; margin-bottom: 12px; }
+  .price { font-size: 26px; font-weight: 700; }
+  .change { font-size: 14px; font-weight: 600; padding: 2px 8px; border-radius: 5px; }
+  .change.up   { background: var(--green-bg); color: #4ade80; }
+  .change.down { background: var(--red-bg);   color: #f87171; }
+  .change.flat { background: #1a1a2e;         color: var(--muted); }
+
+  .signal-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; margin-bottom: 10px;
+  }
+  .signal-badge.buy  { background: var(--green-bg); color: #4ade80; border: 1px solid #166534; }
+  .signal-badge.sell { background: var(--red-bg);   color: #f87171; border: 1px solid #7f1d1d; }
+  .signal-badge.watch{ background: var(--yellow-bg);color: #fbbf24; border: 1px solid #78350f; }
+  .signal-badge.na   { background: #1a1a2e;          color: var(--muted); border: 1px solid var(--border); }
+
+  .indicators { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 12px; font-size: 12px; }
+  .ind-item { display: flex; justify-content: space-between; }
+  .ind-label { color: var(--muted); }
+  .ind-val   { font-weight: 600; }
+  .ind-val.positive { color: #4ade80; }
+  .ind-val.negative { color: #f87171; }
+  .ind-val.warn     { color: #fbbf24; }
+  .ind-val.na       { color: var(--muted); font-style: italic; }
+
+  /* ── RSI bar ── */
+  .rsi-bar-wrap { margin-top: 10px; }
+  .rsi-bar-label { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); margin-bottom: 3px; }
+  .rsi-track { background: #1c2230; border-radius: 4px; height: 5px; position: relative; overflow: visible; }
+  .rsi-fill { height: 100%; border-radius: 4px; transition: width .5s; }
+  .rsi-marker { position: absolute; top: -3px; width: 2px; height: 11px; border-radius: 1px; }
+  .rsi-30 { left: 30%; background: #388bfd55; }
+  .rsi-70 { left: 70%; background: #f4433655; }
+
+  /* ── Modal ── */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0; background: rgba(0,0,0,.75);
+    z-index: 1000; align-items: center; justify-content: center; padding: 20px;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+    width: 100%; max-width: 820px; max-height: 90vh; overflow-y: auto;
+  }
+  .modal-header {
+    padding: 18px 22px; display: flex; justify-content: space-between; align-items: center;
+    border-bottom: 1px solid var(--border); position: sticky; top: 0; background: var(--surface); z-index: 1;
+  }
+  .modal-title { font-size: 18px; font-weight: 700; }
+  .modal-close { background: none; border: none; color: var(--muted); font-size: 22px; cursor: pointer; line-height: 1; padding: 2px 6px; }
+  .modal-close:hover { color: var(--text); }
+  .modal-body { padding: 20px 22px; }
+  .modal-kpis { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin-bottom: 20px; }
+  .kpi { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; }
+  .kpi-label { font-size: 11px; color: var(--muted); margin-bottom: 4px; }
+  .kpi-val   { font-size: 20px; font-weight: 700; }
+  .chart-wrap { position: relative; height: 300px; }
+  .modal-indicators { display: grid; grid-template-columns: repeat(2,1fr); gap: 10px; margin-top: 18px; }
+  .modal-ind { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; }
+  .modal-ind-label { font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+  .modal-ind-val { font-size: 18px; font-weight: 700; }
+  .modal-ind-desc { font-size: 11px; color: var(--muted); margin-top: 3px; }
+
+  /* ── Loader ── */
+  .spinner { display: inline-block; width: 18px; height: 18px; border: 2px solid var(--border); border-top-color: #388bfd; border-radius: 50%; animation: spin .7s linear infinite; vertical-align: middle; margin-right: 8px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .progress-bar { height: 3px; background: #1c2230; margin: 0; }
+  .progress-fill { height: 100%; background: #388bfd; transition: width .3s; }
+
+  @media (max-width: 600px) {
+    .grid { padding: 12px; gap: 10px; }
+    .controls { padding: 10px 12px; }
+    header { padding: 12px; }
+    .modal-kpis { grid-template-columns: repeat(2,1fr); }
+    .stats-bar { gap: 14px; flex-wrap: wrap; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ── Header ────────────────────────────────────────────────────── -->
+<header>
+  <h1>📈 台股電子股 <span>即時監控</span></h1>
+  <div style="display:flex;gap:12px;align-items:center">
+    <button id="refresh-btn" onclick="refreshAll()">🔄 重新整理</button>
+    <div class="header-meta">
+      <div>更新時間：<span id="last-update">—</span></div>
+      <div>資料來源：Yahoo Finance</div>
+    </div>
+  </div>
+</header>
+<div class="progress-bar"><div class="progress-fill" id="progress" style="width:0%"></div></div>
+
+<!-- ── Controls ──────────────────────────────────────────────────── -->
+<div class="controls">
+  <div class="industry-tabs" id="tabs"></div>
+  <div class="sort-group">
+    <label>排序</label>
+    <select id="sort-select" onchange="renderCards()">
+      <option value="default">代號</option>
+      <option value="change_desc">漲幅 ↓</option>
+      <option value="change_asc">跌幅 ↓</option>
+      <option value="rsi_desc">RSI ↓</option>
+      <option value="signal">訊號</option>
+    </select>
+  </div>
+  <div class="signal-legend">
+    <span><span class="dot" style="background:var(--green)"></span> 買進</span>
+    <span><span class="dot" style="background:var(--yellow)"></span> 觀望</span>
+    <span><span class="dot" style="background:var(--red)"></span> 賣出</span>
+  </div>
+</div>
+
+<!-- ── Stats Bar ─────────────────────────────────────────────────── -->
+<div class="stats-bar" id="stats-bar" style="display:none">
+  <div class="stat-item"><span class="stat-label">監控</span><span class="stat-val" id="s-total">—</span></div>
+  <div class="stat-item"><span class="stat-label">上漲</span><span class="stat-val" style="color:var(--green)" id="s-up">—</span></div>
+  <div class="stat-item"><span class="stat-label">下跌</span><span class="stat-val" style="color:var(--red)" id="s-down">—</span></div>
+  <div class="stat-item"><span class="stat-label">🟢 買進</span><span class="stat-val" id="s-buy">—</span></div>
+  <div class="stat-item"><span class="stat-label">🔴 賣出</span><span class="stat-val" id="s-sell">—</span></div>
+  <div class="stat-item"><span class="stat-label">平均RSI</span><span class="stat-val" id="s-rsi">—</span></div>
+</div>
+
+<!-- ── Card Grid ─────────────────────────────────────────────────── -->
+<div class="grid" id="grid">
+  <div id="loading-msg"><span class="spinner"></span>正在載入台股資料，請稍候...</div>
+</div>
+
+<!-- ── Modal ─────────────────────────────────────────────────────── -->
+<div class="modal-overlay" id="modal" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modal-title">—</div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-kpis" id="modal-kpis"></div>
+      <div class="chart-wrap"><canvas id="modal-chart"></canvas></div>
+      <div class="modal-indicators" id="modal-inds"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─────────────────────────────────────────────────────────────────────────────
+// 股票清單（代號、名稱、產業代碼）
+// ─────────────────────────────────────────────────────────────────────────────
+const INDUSTRY_NAMES = {
+  '24': '半導體', '25': '電腦及週邊', '26': '光電',
+  '27': '通訊網路', '28': '電子零組件', '29': '電子設備',
+  '30': '資訊服務', '31': '其他電子',
+};
+
+const STOCKS = [
+  // 24 半導體
+  {code:'2330', name:'台積電',    ind:'24'}, {code:'2303', name:'聯電',      ind:'24'},
+  {code:'2454', name:'聯發科',    ind:'24'}, {code:'3034', name:'聯詠',      ind:'24'},
+  {code:'2379', name:'瑞昱',      ind:'24'}, {code:'2408', name:'南亞科',    ind:'24'},
+  {code:'2344', name:'華邦電',    ind:'24'}, {code:'3711', name:'日月光投控',ind:'24'},
+  {code:'5347', name:'世界',      ind:'24'}, {code:'3443', name:'創意',      ind:'24'},
+  {code:'6533', name:'晶心科',    ind:'24'}, {code:'2337', name:'旺宏',      ind:'24'},
+  // 25 電腦及週邊
+  {code:'2317', name:'鴻海',      ind:'25'}, {code:'2382', name:'廣達',      ind:'25'},
+  {code:'2357', name:'華碩',      ind:'25'}, {code:'2353', name:'宏碁',      ind:'25'},
+  {code:'3231', name:'緯創',      ind:'25'}, {code:'2301', name:'光寶科',    ind:'25'},
+  {code:'2356', name:'英業達',    ind:'25'}, {code:'2376', name:'技嘉',      ind:'25'},
+  // 26 光電
+  {code:'2409', name:'友達',      ind:'26'}, {code:'3481', name:'群創',      ind:'26'},
+  {code:'3008', name:'大立光',    ind:'26'}, {code:'2448', name:'晶電',      ind:'26'},
+  {code:'3413', name:'京鼎',      ind:'26'},
+  // 27 通訊網路
+  {code:'2412', name:'中華電',    ind:'27'}, {code:'3045', name:'台灣大',    ind:'27'},
+  {code:'2498', name:'宏達電',    ind:'27'}, {code:'3706', name:'神達',      ind:'27'},
+  // 28 電子零組件
+  {code:'2308', name:'台達電',    ind:'28'}, {code:'2327', name:'國巨',      ind:'28'},
+  {code:'3189', name:'景碩',      ind:'28'}, {code:'2393', name:'億光',      ind:'28'},
+  {code:'6116', name:'彩晶',      ind:'28'},
+  // 29 電子設備
+  {code:'2395', name:'研華',      ind:'29'}, {code:'6415', name:'矽力-KY',   ind:'29'},
+  {code:'3714', name:'兆利',      ind:'29'},
+  // 30 資訊服務
+  {code:'2392', name:'正崴',      ind:'30'}, {code:'5263', name:'委來好',    ind:'30'},
+  {code:'8299', name:'群聯',      ind:'30'},
+  // 31 其他電子
+  {code:'5269', name:'祥碩',      ind:'31'}, {code:'3105', name:'穩懋',      ind:'31'},
+  {code:'6446', name:'藥華藥',    ind:'31'},
+];
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 狀態管理
+// ─────────────────────────────────────────────────────────────────────────────
+const state = {
+  data: {},           // code → {price, prevClose, changePct, ma5, ma20, rsi, bias, closes, dates}
+  activeInd: 'all',
+  loading: false,
+  chartInstance: null,
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 技術指標計算
+// ─────────────────────────────────────────────────────────────────────────────
+function calcMA(closes, period) {
+  if (closes.length < period) return null;
+  const sum = closes.slice(-period).reduce((a, b) => a + b, 0);
+  return sum / period;
+}
+
+function calcRSI(closes, period = 14) {
+  if (closes.length < period + 1) return null;
+  const recent = closes.slice(-(period + 1));
+  let gains = 0, losses = 0;
+  for (let i = 1; i < recent.length; i++) {
+    const diff = recent[i] - recent[i - 1];
+    if (diff > 0) gains += diff; else losses -= diff;
+  }
+  const avgGain = gains / period;
+  const avgLoss = losses / period;
+  if (avgLoss === 0) return 100;
+  const rs = avgGain / avgLoss;
+  return 100 - 100 / (1 + rs);
+}
+
+function calcBias(price, ma20) {
+  if (!ma20 || ma20 === 0) return null;
+  return (price - ma20) / ma20 * 100;
+}
+
+function getSignal(rsi, ma5, ma20, bias) {
+  if (rsi === null || ma5 === null || ma20 === null) return 'na';
+  // 賣出條件
+  if (rsi > 72) return 'sell';
+  if (bias !== null && bias > 15) return 'sell';
+  if (ma5 < ma20 && rsi > 60) return 'sell';
+  // 買進條件
+  if (ma5 > ma20 && rsi >= 35 && rsi <= 65 && (bias === null || bias > -8)) return 'buy';
+  // 觀望
+  return 'watch';
+}
+
+const SIGNAL_LABEL = { buy: '🟢 買進', sell: '🔴 賣出', watch: '🟡 觀望', na: '⚪ 載入中' };
+const SIGNAL_CLASS = { buy: 'buy', sell: 'sell', watch: 'watch', na: 'na' };
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Yahoo Finance API（透過 CORS proxy）
+// ─────────────────────────────────────────────────────────────────────────────
+const PROXIES = [
+  url => `https://corsproxy.io/?${encodeURIComponent(url)}`,
+  url => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+  url => url,   // 直連（最後嘗試，部分瀏覽器可能成功）
+];
+
+async function fetchWithProxy(yahooUrl) {
+  for (const makeUrl of PROXIES) {
+    try {
+      const res = await fetch(makeUrl(yahooUrl), { signal: AbortSignal.timeout(12000) });
+      if (!res.ok) continue;
+      const json = await res.json();
+      // allorigins wraps in {contents: "..."}
+      if (typeof json === 'string') return JSON.parse(json);
+      if (json.contents) return JSON.parse(json.contents);
+      return json;
+    } catch (_) { /* try next proxy */ }
+  }
+  return null;
+}
+
+async function fetchChart(code) {
+  const sym = `${code}.TW`;
+  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${sym}?interval=1d&range=3mo&includePrePost=false`;
+  const json = await fetchWithProxy(url);
+  if (!json) return null;
+  try {
+    const result = json.chart.result[0];
+    const closes = result.indicators.quote[0].close.map(v => v ?? null).filter(v => v !== null);
+    const timestamps = result.timestamp;
+    const meta = result.meta;
+    const price = meta.regularMarketPrice ?? closes[closes.length - 1];
+    const prevClose = meta.chartPreviousClose ?? closes[closes.length - 2];
+    const dates = timestamps.map(t => {
+      const d = new Date(t * 1000);
+      return `${d.getMonth() + 1}/${d.getDate()}`;
+    });
+    const ma5  = calcMA(closes, 5);
+    const ma20 = calcMA(closes, 20);
+    const rsi  = calcRSI(closes, 14);
+    const bias = calcBias(price, ma20);
+    const changePct = prevClose ? (price - prevClose) / prevClose * 100 : 0;
+    return { price, prevClose, changePct, ma5, ma20, rsi, bias, closes, dates };
+  } catch (_) { return null; }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 資料載入
+// ─────────────────────────────────────────────────────────────────────────────
+async function refreshAll() {
+  if (state.loading) return;
+  state.loading = true;
+  document.getElementById('refresh-btn').disabled = true;
+  document.getElementById('refresh-btn').textContent = '載入中...';
+  document.getElementById('progress').style.width = '0%';
+  document.getElementById('grid').innerHTML = '<div id="loading-msg"><span class="spinner"></span>正在向 Yahoo Finance 抓取資料...</div>';
+
+  let done = 0;
+  const BATCH = 4;
+  const errors = [];
+
+  for (let i = 0; i < STOCKS.length; i += BATCH) {
+    const chunk = STOCKS.slice(i, i + BATCH);
+    await Promise.all(chunk.map(async s => {
+      const d = await fetchChart(s.code);
+      if (d) state.data[s.code] = d;
+      else errors.push(s.code);
+      done++;
+      document.getElementById('progress').style.width = `${Math.round(done / STOCKS.length * 100)}%`;
+    }));
+    renderCards();   // 邊載入邊渲染
+  }
+
+  document.getElementById('progress').style.width = '100%';
+  document.getElementById('last-update').textContent = new Date().toLocaleTimeString('zh-TW');
+  document.getElementById('stats-bar').style.display = 'flex';
+  document.getElementById('refresh-btn').disabled = false;
+  document.getElementById('refresh-btn').textContent = '🔄 重新整理';
+  state.loading = false;
+
+  if (errors.length > 0 && Object.keys(state.data).length === 0) {
+    document.getElementById('grid').innerHTML = `
+      <div id="error-msg">
+        <b style="color:#f87171;font-size:15px">⚠️ 無法連線至 Yahoo Finance API</b><br><br>
+        常見原因：<br>
+        1. <b>CORS 限制</b>：從 <code>file://</code> 開啟本機 HTML 時，部分瀏覽器會封鎖跨域請求<br>
+        2. <b>網路限制</b>：防火牆封鎖了外部 API<br><br>
+        <b>解法（任選其一）：</b><br>
+        ① 用 Python 啟動本機伺服器（推薦）：<br>
+        &nbsp;&nbsp;<code style="background:#1c2230;padding:4px 8px;border-radius:4px">python -m http.server 8080</code>
+        → 開啟 <a href="http://localhost:8080/dashboard_web.html" style="color:#7dd3fc">http://localhost:8080/dashboard_web.html</a><br><br>
+        ② Chrome 加上啟動參數：<code style="background:#1c2230;padding:4px 8px;border-radius:4px">--disable-web-security --user-data-dir=/tmp/chrome</code><br>
+        ③ 使用 Firefox（對 file:// 的 CORS 限制較寬鬆）
+      </div>`;
+  }
+  updateStats();
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 渲染
+// ─────────────────────────────────────────────────────────────────────────────
+function renderCards() {
+  const ind = state.activeInd;
+  let stocks = ind === 'all' ? [...STOCKS] : STOCKS.filter(s => s.ind === ind);
+
+  // 排序
+  const sort = document.getElementById('sort-select').value;
+  stocks.sort((a, b) => {
+    const da = state.data[a.code], db = state.data[b.code];
+    if (sort === 'change_desc') return (db?.changePct ?? -99) - (da?.changePct ?? -99);
+    if (sort === 'change_asc')  return (da?.changePct ?? 99)  - (db?.changePct ?? 99);
+    if (sort === 'rsi_desc')    return (db?.rsi ?? -1) - (da?.rsi ?? -1);
+    if (sort === 'signal') {
+      const order = { sell: 0, buy: 1, watch: 2, na: 3 };
+      const sa = getSignal(da?.rsi, da?.ma5, da?.ma20, da?.bias);
+      const sb = getSignal(db?.rsi, db?.ma5, db?.ma20, db?.bias);
+      return order[sa] - order[sb];
+    }
+    return a.code.localeCompare(b.code);
+  });
+
+  const grid = document.getElementById('grid');
+  const existing = {};
+  grid.querySelectorAll('.card').forEach(el => { existing[el.dataset.code] = el; });
+
+  // 先移除不屬於此 tab 的卡片
+  Object.keys(existing).forEach(code => {
+    if (!stocks.find(s => s.code === code)) existing[code].remove();
+  });
+
+  stocks.forEach((s, idx) => {
+    const d = state.data[s.code];
+    const signal = d ? getSignal(d.rsi, d.ma5, d.ma20, d.bias) : 'na';
+    const html = buildCard(s, d, signal);
+    const oldEl = grid.querySelector(`[data-code="${s.code}"]`);
+    if (oldEl) {
+      oldEl.outerHTML = html;
+    } else {
+      const tmp = document.createElement('div');
+      tmp.innerHTML = html;
+      grid.appendChild(tmp.firstChild);
+    }
+  });
+
+  // 移除 loading-msg 如果有卡片
+  if (stocks.length > 0) {
+    const msg = document.getElementById('loading-msg');
+    if (msg) msg.remove();
+  }
+
+  updateStats();
+}
+
+function buildCard(s, d, signal) {
+  const indName = INDUSTRY_NAMES[s.ind] ?? s.ind;
+  const price = d ? d.price.toFixed(2) : '—';
+  const pct = d ? d.changePct.toFixed(2) : null;
+  const chgClass = !d ? '' : d.changePct > 0 ? 'up' : d.changePct < 0 ? 'down' : 'flat';
+  const chgText = !d ? '—' : `${d.changePct >= 0 ? '+' : ''}${pct}%`;
+  const ma5  = d?.ma5  ? d.ma5.toFixed(1)  : '—';
+  const ma20 = d?.ma20 ? d.ma20.toFixed(1) : '—';
+  const rsi  = d?.rsi  ? d.rsi.toFixed(1)  : null;
+  const bias = d?.bias !== null && d?.bias !== undefined ? d.bias.toFixed(2) : null;
+
+  const biasClass = !bias ? 'na' : parseFloat(bias) > 10 ? 'warn' : parseFloat(bias) < -5 ? 'warn' : '';
+  const rsiClass  = !rsi  ? 'na' : parseFloat(rsi) > 70 ? 'warn' : parseFloat(rsi) < 30 ? 'positive' : '';
+  const ma5Class  = (!d?.ma5 || !d?.ma20) ? 'na' : d.ma5 > d.ma20 ? 'positive' : 'negative';
+
+  // RSI bar
+  const rsiVal = rsi ? parseFloat(rsi) : 50;
+  const rsiColor = rsiVal > 70 ? '#ef4444' : rsiVal < 30 ? '#22c55e' : '#60a5fa';
+
+  return `
+  <div class="card signal-${signal}" data-code="${s.code}" onclick="openModal('${s.code}')">
+    <div class="card-header">
+      <div class="stock-id">
+        <div class="code">${s.code}</div>
+        <div class="name">${s.name}</div>
+      </div>
+      <span class="industry-tag">${indName}</span>
+    </div>
+    <div class="price-row">
+      <span class="price">${price}</span>
+      <span class="change ${chgClass}">${chgText}</span>
+    </div>
+    <div class="signal-badge ${SIGNAL_CLASS[signal]}">${SIGNAL_LABEL[signal]}</div>
+    <div class="indicators">
+      <div class="ind-item"><span class="ind-label">MA5</span><span class="ind-val ${ma5Class}">${ma5}</span></div>
+      <div class="ind-item"><span class="ind-label">MA20</span><span class="ind-val">${ma20}</span></div>
+      <div class="ind-item"><span class="ind-label">RSI(14)</span><span class="ind-val ${rsiClass}">${rsi ?? '—'}</span></div>
+      <div class="ind-item"><span class="ind-label">乖離率</span><span class="ind-val ${biasClass}">${bias !== null ? bias + '%' : '—'}</span></div>
+    </div>
+    ${rsi ? `
+    <div class="rsi-bar-wrap">
+      <div class="rsi-bar-label"><span>0</span><span>RSI ${rsi}</span><span>100</span></div>
+      <div class="rsi-track">
+        <div class="rsi-fill" style="width:${rsiVal}%;background:${rsiColor}"></div>
+        <div class="rsi-marker rsi-30"></div>
+        <div class="rsi-marker rsi-70"></div>
+      </div>
+    </div>` : ''}
+  </div>`;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Stats bar
+// ─────────────────────────────────────────────────────────────────────────────
+function updateStats() {
+  const ind = state.activeInd;
+  const stocks = ind === 'all' ? STOCKS : STOCKS.filter(s => s.ind === ind);
+  const loaded = stocks.filter(s => state.data[s.code]);
+  let up = 0, down = 0, buy = 0, sell = 0, rsiSum = 0, rsiCount = 0;
+  loaded.forEach(s => {
+    const d = state.data[s.code];
+    if (d.changePct > 0) up++; else if (d.changePct < 0) down++;
+    const sig = getSignal(d.rsi, d.ma5, d.ma20, d.bias);
+    if (sig === 'buy') buy++;
+    if (sig === 'sell') sell++;
+    if (d.rsi) { rsiSum += d.rsi; rsiCount++; }
+  });
+  document.getElementById('s-total').textContent = `${loaded.length} / ${stocks.length}`;
+  document.getElementById('s-up').textContent    = up;
+  document.getElementById('s-down').textContent  = down;
+  document.getElementById('s-buy').textContent   = buy;
+  document.getElementById('s-sell').textContent  = sell;
+  document.getElementById('s-rsi').textContent   = rsiCount ? (rsiSum / rsiCount).toFixed(1) : '—';
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Industry tabs
+// ─────────────────────────────────────────────────────────────────────────────
+function buildTabs() {
+  const container = document.getElementById('tabs');
+  const tabs = [['all', '全部']].concat(Object.entries(INDUSTRY_NAMES));
+  container.innerHTML = tabs.map(([key, label]) =>
+    `<div class="tab${key === 'all' ? ' active' : ''}" data-ind="${key}" onclick="switchTab('${key}')">${label}</div>`
+  ).join('');
+}
+
+function switchTab(ind) {
+  state.activeInd = ind;
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.ind === ind));
+  renderCards();
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Modal / Chart
+// ─────────────────────────────────────────────────────────────────────────────
+async function openModal(code) {
+  const s = STOCKS.find(x => x.code === code);
+  const d = state.data[code];
+  if (!s) return;
+
+  document.getElementById('modal-title').textContent = `${s.code} ${s.name}　${INDUSTRY_NAMES[s.ind] ?? ''}`;
+  document.getElementById('modal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+
+  // KPIs
+  const signal = d ? getSignal(d.rsi, d.ma5, d.ma20, d.bias) : 'na';
+  const chgColor = !d ? '' : d.changePct >= 0 ? 'var(--green)' : 'var(--red)';
+  document.getElementById('modal-kpis').innerHTML = `
+    <div class="kpi"><div class="kpi-label">現價</div><div class="kpi-val">${d ? d.price.toFixed(2) : '—'}</div></div>
+    <div class="kpi"><div class="kpi-label">漲跌幅</div><div class="kpi-val" style="color:${chgColor}">${d ? (d.changePct >= 0 ? '+' : '') + d.changePct.toFixed(2) + '%' : '—'}</div></div>
+    <div class="kpi"><div class="kpi-label">訊號</div><div class="kpi-val" style="font-size:15px">${SIGNAL_LABEL[signal]}</div></div>
+    <div class="kpi"><div class="kpi-label">RSI(14)</div><div class="kpi-val">${d?.rsi ? d.rsi.toFixed(1) : '—'}</div></div>
+  `;
+
+  // Indicators
+  document.getElementById('modal-inds').innerHTML = `
+    <div class="modal-ind">
+      <div class="modal-ind-label">MA5 / MA20</div>
+      <div class="modal-ind-val" style="color:${d?.ma5 && d?.ma20 ? (d.ma5 > d.ma20 ? 'var(--green)' : 'var(--red)') : 'var(--muted)'}">
+        ${d?.ma5 ? d.ma5.toFixed(1) : '—'} / ${d?.ma20 ? d.ma20.toFixed(1) : '—'}
+      </div>
+      <div class="modal-ind-desc">${d?.ma5 && d?.ma20 ? (d.ma5 > d.ma20 ? '短線多頭排列' : '短線空頭排列') : '資料不足'}</div>
+    </div>
+    <div class="modal-ind">
+      <div class="modal-ind-label">乖離率 (MA20)</div>
+      <div class="modal-ind-val" style="color:${d?.bias !== null ? (d.bias > 10 ? 'var(--red)' : d.bias < -5 ? 'var(--green)' : 'var(--text)') : 'var(--muted)'}">
+        ${d?.bias !== null && d?.bias !== undefined ? d.bias.toFixed(2) + '%' : '—'}
+      </div>
+      <div class="modal-ind-desc">${d?.bias !== null && d?.bias !== undefined ? (d.bias > 10 ? '超買警戒' : d.bias < -5 ? '可能超賣' : '正常範圍') : ''}</div>
+    </div>
+  `;
+
+  // Chart
+  if (state.chartInstance) { state.chartInstance.destroy(); state.chartInstance = null; }
+  const ctx = document.getElementById('modal-chart').getContext('2d');
+
+  if (d?.closes?.length > 0) {
+    const closes = d.closes;
+    const labels = d.dates;
+    // 計算 MA 線
+    const ma5Line  = closes.map((_, i) => i >= 4  ? closes.slice(i-4,  i+1).reduce((a,b)=>a+b,0)/5  : null);
+    const ma20Line = closes.map((_, i) => i >= 19 ? closes.slice(i-19, i+1).reduce((a,b)=>a+b,0)/20 : null);
+
+    state.chartInstance = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [
+          {
+            label: '收盤價', data: closes,
+            borderColor: '#388bfd', backgroundColor: 'rgba(56,139,253,.08)',
+            borderWidth: 2, pointRadius: 0, fill: true, tension: 0.1,
+          },
+          {
+            label: 'MA5', data: ma5Line,
+            borderColor: '#fbbf24', borderWidth: 1.5, pointRadius: 0, spanGaps: true, tension: 0.1,
+          },
+          {
+            label: 'MA20', data: ma20Line,
+            borderColor: '#f87171', borderWidth: 1.5, pointRadius: 0, spanGaps: true, tension: 0.1,
+          },
+        ],
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        interaction: { intersect: false, mode: 'index' },
+        plugins: {
+          legend: { labels: { color: '#8b949e', boxWidth: 14, font: { size: 12 } } },
+          tooltip: {
+            backgroundColor: '#1c2230', borderColor: '#30363d', borderWidth: 1,
+            titleColor: '#e6edf3', bodyColor: '#8b949e',
+            callbacks: {
+              label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y ? ctx.parsed.y.toFixed(2) : '—'}`
+            }
+          }
+        },
+        scales: {
+          x: { ticks: { color: '#8b949e', maxTicksLimit: 8, font: { size: 11 } }, grid: { color: '#21262d' } },
+          y: { ticks: { color: '#8b949e', font: { size: 11 } }, grid: { color: '#21262d' } },
+        },
+      },
+    });
+  } else {
+    ctx.fillStyle = '#8b949e';
+    ctx.font = '14px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('圖表資料載入中...', ctx.canvas.width / 2, 150);
+  }
+}
+
+function closeModal() {
+  document.getElementById('modal').classList.remove('open');
+  document.body.style.overflow = '';
+  if (state.chartInstance) { state.chartInstance.destroy(); state.chartInstance = null; }
+}
+
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 初始化
+// ─────────────────────────────────────────────────────────────────────────────
+buildTabs();
+refreshAll();
+</script>
+</body>
+</html>
