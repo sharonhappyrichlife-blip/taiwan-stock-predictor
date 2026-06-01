@@ -11,7 +11,11 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "src"))
 
 from data_fetcher import fetch_stock_data, TAIWAN_STOCKS, generate_mock_sentiment
 from technical_indicators import add_all_indicators, get_signal_summary
-from granger_analysis import sentiment_stock_granger, cross_correlation_analysis
+from granger_analysis import (
+    sentiment_stock_granger, cross_correlation_analysis,
+    sentiment_lead_lag_analysis, rolling_granger,
+    sentiment_predictive_score,
+)
 from sentiment_analyzer import generate_sample_news, analyze_news_batch, aggregate_daily_sentiment, sentiment_momentum
 
 st.set_page_config(
@@ -206,8 +210,8 @@ with tab2:
 with tab3:
     st.markdown("## 🔗 格蘭傑因果分析 (Granger Causality)")
     st.markdown("""
-格蘭傑因果性測試是一種統計假設測試，用於確定一個時間序列是否能夠預測另一個時間序列。
-若**情緒格蘭傑因果**股價報酬，表示過去的情緒數據包含額外的預測資訊。
+格蘭傑因果性測試用於確定一個時間序列是否能**統計上預測**另一個時間序列。
+本模組包含：**雙向因果檢定**、**情緒領先/落後分解**、**滾動視窗時變因果**、**預測力評分**。
     """)
 
     dates_key = str(df.index[0]) + str(df.index[-1])
@@ -217,57 +221,273 @@ with tab3:
     if len(aligned) < 30:
         st.warning("資料點不足，無法進行格蘭傑分析。")
     else:
-        with st.spinner("執行格蘭傑因果分析..."):
-            granger_result = sentiment_stock_granger(aligned["sentiment"], aligned["returns"], max_lag=max_granger_lag)
+        subtab1, subtab2, subtab3, subtab4 = st.tabs(
+            ["📊 雙向因果", "⏱ 領先/落後分析", "🔄 滾動視窗", "🎯 預測力評分"]
+        )
 
-        s2r = granger_result["sentiment_causes_return"]
-        r2s = granger_result["return_causes_sentiment"]
+        # ── Sub-tab 1: Bidirectional Granger ────────────────────────────────
+        with subtab1:
+            with st.spinner("執行格蘭傑因果分析..."):
+                granger_result = sentiment_stock_granger(
+                    aligned["sentiment"], aligned["returns"], max_lag=max_granger_lag
+                )
+            s2r = granger_result["sentiment_causes_return"]
+            r2s = granger_result["return_causes_sentiment"]
 
-        col1, col2 = st.columns(2)
-        for col, res, title in [(col1, s2r, "情緒 → 報酬率"), (col2, r2s, "報酬率 → 情緒")]:
-            with col:
-                st.markdown(f"### {title}")
-                if not res.get("error"):
-                    sig = res["granger_causes"]
-                    st.markdown(f"**結果：{'✅ 顯著' if sig else '❌ 不顯著'}**")
-                    st.markdown(f"最佳落後期數：**{res['best_lag']}**")
-                    st.markdown(f"P 值：**{res['best_p_value']:.4f}**")
-                    if title == "情緒 → 報酬率":
-                        st.markdown(f"結論：{'情緒對股價報酬具有預測力 📊' if sig else '情緒對股價報酬無顯著預測力'}")
+            col1, col2 = st.columns(2)
+            for col, res, title in [(col1, s2r, "情緒 → 報酬率"), (col2, r2s, "報酬率 → 情緒")]:
+                with col:
+                    st.markdown(f"### {title}")
+                    if not res.get("error"):
+                        sig = res["granger_causes"]
+                        badge = "✅ 顯著" if sig else "❌ 不顯著"
+                        st.markdown(f"**結果：{badge}**")
+                        st.markdown(f"最佳落後期數：**{res['best_lag']}**")
+                        st.markdown(f"P 值：**{res['best_p_value']:.4f}**")
+                        st.markdown(f"F 統計量：**{res.get('best_f_stat', 0):.3f}**")
+                        st.markdown(f"顯著期數：**{res.get('n_significant_lags', 0)} / {max_granger_lag}**")
                     else:
-                        st.markdown(f"結論：{'股價報酬對情緒具有回饋效應 🔄' if sig else '股價報酬對情緒無顯著回饋效應'}")
-                else:
-                    st.error(res["error"])
+                        st.error(res["error"])
 
-        st.markdown("---")
-        st.markdown("#### P 值 vs 落後期數")
-        pval_data = []
-        if not s2r.get("error") and "results" in s2r:
-            pval_data += [{"lag": k, "p_value": v["p_value"], "type": "情緒→報酬"} for k, v in s2r["results"].items()]
-        if not r2s.get("error") and "results" in r2s:
-            pval_data += [{"lag": k, "p_value": v["p_value"], "type": "報酬→情緒"} for k, v in r2s["results"].items()]
-        if pval_data:
-            fig_pv = px.line(pd.DataFrame(pval_data), x="lag", y="p_value", color="type",
-                              title="格蘭傑因果 P 值 (虛線為 5% 顯著水準)", template="plotly_dark",
-                              color_discrete_map={"情緒→報酬": "#42a5f5", "報酬→情緒": "#ffa726"})
-            fig_pv.add_hline(y=0.05, line_dash="dash", line_color="#ef5350", annotation_text="p=0.05")
-            fig_pv.update_layout(height=350, paper_bgcolor="#0e1117", plot_bgcolor="#0e1117")
-            st.plotly_chart(fig_pv, use_container_width=True)
+            st.markdown("---")
+            pval_data = []
+            if not s2r.get("error") and "results" in s2r:
+                pval_data += [{"lag": k, "p_value": v["p_value"], "F統計量": v["f_stat"], "type": "情緒→報酬"}
+                               for k, v in s2r["results"].items()]
+            if not r2s.get("error") and "results" in r2s:
+                pval_data += [{"lag": k, "p_value": v["p_value"], "F統計量": v["f_stat"], "type": "報酬→情緒"}
+                               for k, v in r2s["results"].items()]
+            if pval_data:
+                c1, c2 = st.columns(2)
+                with c1:
+                    fig_pv = px.line(pd.DataFrame(pval_data), x="lag", y="p_value", color="type",
+                                      title="P 值 vs 落後期數", template="plotly_dark",
+                                      color_discrete_map={"情緒→報酬": "#42a5f5", "報酬→情緒": "#ffa726"})
+                    fig_pv.add_hline(y=0.05, line_dash="dash", line_color="#ef5350", annotation_text="p=0.05")
+                    fig_pv.update_layout(height=320, paper_bgcolor="#0e1117", plot_bgcolor="#0e1117")
+                    st.plotly_chart(fig_pv, use_container_width=True)
+                with c2:
+                    fig_f = px.bar(pd.DataFrame(pval_data), x="lag", y="F統計量", color="type", barmode="group",
+                                    title="F 統計量 vs 落後期數", template="plotly_dark",
+                                    color_discrete_map={"情緒→報酬": "#42a5f5", "報酬→情緒": "#ffa726"})
+                    fig_f.update_layout(height=320, paper_bgcolor="#0e1117", plot_bgcolor="#0e1117")
+                    st.plotly_chart(fig_f, use_container_width=True)
 
-        st.markdown("#### 情緒與報酬率互相關分析")
-        cc_df = cross_correlation_analysis(aligned["sentiment"], aligned["returns"], max_lag=max_granger_lag)
-        fig_cc = px.bar(cc_df, x="lag", y="correlation",
-                         title="互相關係數 (正落後=情緒領先報酬)", template="plotly_dark",
-                         color="correlation", color_continuous_scale=["#ef5350", "#78909c", "#26a69a"])
-        fig_cc.add_hline(y=0, line_color="#ffffff")
-        fig_cc.update_layout(height=350, paper_bgcolor="#0e1117", plot_bgcolor="#0e1117")
-        st.plotly_chart(fig_cc, use_container_width=True)
+            with st.expander("📋 平穩性檢定 (ADF + KPSS)"):
+                for key, info in granger_result.get("stationarity", {}).items():
+                    label = "情緒序列" if key == "sentiment" else "報酬率序列"
+                    adf_ok = "✅" if info.get("is_stationary") else "⚠️"
+                    conclusion_zh = {"stationary": "平穩", "non_stationary": "非平穩", "uncertain": "不確定"}.get(
+                        info.get("conclusion", ""), "—"
+                    )
+                    st.markdown(
+                        f"**{label}** {adf_ok} {conclusion_zh} | "
+                        f"ADF p={info.get('adf_p', info.get('p_value', 1)):.4f} | "
+                        f"KPSS p={info.get('kpss_p', float('nan')):.4f}"
+                    )
 
-        with st.expander("📋 平穩性檢定結果 (ADF Test)"):
-            for key, info in granger_result.get("stationarity", {}).items():
-                label = "情緒序列" if key == "sentiment" else "報酬率序列"
-                status = "✅ 平穩" if info.get("is_stationary") else "⚠️ 非平穩 (已差分處理)"
-                st.markdown(f"**{label}**: {status} | ADF統計量: {info.get('adf_stat', 0):.4f} | p值: {info.get('p_value', 1):.4f}")
+        # ── Sub-tab 2: Lead / Lag analysis ─────────────────────────────────
+        with subtab2:
+            st.markdown("### ⏱ 情緒領先/落後股價分析")
+            st.markdown("""
+- **正落後 (k > 0)**：情緒在 k 期前是否能預測當期報酬（情緒**領先**）
+- **負落後 (k < 0)**：當期報酬是否受 k 期前股價影響（情緒**落後**）
+            """)
+
+            with st.spinner("計算領先落後結構..."):
+                ll = sentiment_lead_lag_analysis(
+                    aligned["sentiment"], aligned["returns"], max_lag=max_granger_lag
+                )
+
+            summary = ll["summary"]
+            rel_color = {
+                "sentiment_leads": "#26a69a",
+                "price_leads": "#ef5350",
+                "bidirectional": "#ffd54f",
+                "none": "#78909c",
+            }.get(summary["relationship"], "#78909c")
+
+            st.markdown(
+                f"<div style='background:{rel_color}22; border-left:4px solid {rel_color}; "
+                f"padding:12px; border-radius:8px; margin-bottom:12px'>"
+                f"<b>關係類型：{summary['relationship_zh']}</b><br>"
+                f"{summary['interpretation']}</div>",
+                unsafe_allow_html=True,
+            )
+
+            mc1, mc2, mc3, mc4 = st.columns(4)
+            mc1.metric("最佳領先期", f"{summary['optimal_lead_k'] or '—'} 日")
+            mc2.metric("領先最低 P 值", f"{summary['best_lead_p_value']:.4f}")
+            mc3.metric("最佳落後期", f"{summary['optimal_lag_k'] or '—'} 日")
+            mc4.metric("落後最低 P 值", f"{summary['best_lag_p_value']:.4f}")
+
+            st.markdown("---")
+
+            # Cross-correlation heatmap-style bar chart
+            cc_df = ll["cross_corr_df"]
+            fig_cc = go.Figure()
+            colors = ["#26a69a" if r > 0 else "#ef5350" for r in cc_df["correlation"]]
+            fig_cc.add_trace(go.Bar(
+                x=cc_df["lag"], y=cc_df["correlation"],
+                marker_color=colors,
+                text=[f"p={p:.3f}" for p in cc_df["p_value"]],
+                textposition="outside",
+                name="相關係數",
+            ))
+            fig_cc.add_hline(y=0, line_color="#ffffff", line_width=0.8)
+            # Mark significant bars
+            sig_df = cc_df[cc_df["significant"]]
+            if not sig_df.empty:
+                fig_cc.add_trace(go.Scatter(
+                    x=sig_df["lag"], y=sig_df["correlation"] * 0,
+                    mode="markers", marker=dict(symbol="star", size=14, color="#ffd54f"),
+                    name="顯著 (p<0.05)",
+                ))
+            fig_cc.update_layout(
+                title="互相關係數（負=情緒落後，正=情緒領先，★=顯著）",
+                xaxis_title="落後期數 (交易日)",
+                yaxis_title="Pearson 相關係數",
+                template="plotly_dark", height=380,
+                paper_bgcolor="#0e1117", plot_bgcolor="#0e1117",
+            )
+            st.plotly_chart(fig_cc, use_container_width=True)
+
+            c1, c2 = st.columns(2)
+            with c1:
+                lead_df = ll["lead_df"]
+                if not lead_df.empty:
+                    fig_lead = px.bar(lead_df, x="lead_k", y="p_value",
+                                       title="情緒領先 k 期 → 報酬率 (Granger P 值)",
+                                       template="plotly_dark",
+                                       color="significant",
+                                       color_discrete_map={True: "#26a69a", False: "#546e7a"},
+                                       labels={"lead_k": "領先期數 k", "p_value": "P 值"})
+                    fig_lead.add_hline(y=0.05, line_dash="dash", line_color="#ef5350")
+                    fig_lead.update_layout(height=300, paper_bgcolor="#0e1117", plot_bgcolor="#0e1117")
+                    st.plotly_chart(fig_lead, use_container_width=True)
+            with c2:
+                lag_df = ll["lag_df"]
+                if not lag_df.empty:
+                    fig_lag = px.bar(lag_df, x="lag_k", y="p_value",
+                                      title="報酬率領先 k 期 → 情緒 (Granger P 值)",
+                                      template="plotly_dark",
+                                      color="significant",
+                                      color_discrete_map={True: "#ffa726", False: "#546e7a"},
+                                      labels={"lag_k": "落後期數 k", "p_value": "P 值"})
+                    fig_lag.add_hline(y=0.05, line_dash="dash", line_color="#ef5350")
+                    fig_lag.update_layout(height=300, paper_bgcolor="#0e1117", plot_bgcolor="#0e1117")
+                    st.plotly_chart(fig_lag, use_container_width=True)
+
+        # ── Sub-tab 3: Rolling Granger ──────────────────────────────────────
+        with subtab3:
+            st.markdown("### 🔄 滾動視窗格蘭傑因果（時變因果）")
+            st.markdown("以固定視窗滾動計算格蘭傑因果 P 值，偵測因果關係的**結構性轉變**。")
+
+            roll_window = st.slider("滾動視窗大小（交易日）", 30, 120, 60, step=10)
+            roll_lag = st.slider("固定落後期數", 1, 5, 1)
+
+            if len(aligned) < roll_window + 10:
+                st.warning("資料不足以執行滾動分析，請縮短視窗或延長資料期間。")
+            else:
+                with st.spinner("計算滾動格蘭傑因果..."):
+                    roll_s2r = rolling_granger(aligned["sentiment"], aligned["returns"],
+                                                window=roll_window, lag=roll_lag)
+                    roll_r2s = rolling_granger(aligned["returns"], aligned["sentiment"],
+                                                window=roll_window, lag=roll_lag)
+
+                fig_roll = make_subplots(rows=3, cols=1, shared_xaxes=True,
+                                          vertical_spacing=0.06,
+                                          subplot_titles=["收盤價", "情緒→報酬 P 值", "報酬→情緒 P 值"],
+                                          row_heights=[0.35, 0.325, 0.325])
+                fig_roll.add_trace(go.Scatter(x=df.index, y=df["close"], name="收盤價",
+                                               line=dict(color="#42a5f5")), row=1, col=1)
+                # P-value traces
+                for roll_df, color, name, row in [
+                    (roll_s2r, "#26a69a", "情緒→報酬", 2),
+                    (roll_r2s, "#ffa726", "報酬→情緒", 3),
+                ]:
+                    fig_roll.add_trace(go.Scatter(
+                        x=roll_df.index, y=roll_df["p_value"],
+                        name=name, line=dict(color=color, width=1.5),
+                    ), row=row, col=1)
+                    # Shade significant regions
+                    sig_mask = roll_df["significant"].fillna(False)
+                    if sig_mask.any():
+                        fig_roll.add_trace(go.Scatter(
+                            x=roll_df.index, y=np.where(sig_mask, roll_df["p_value"], np.nan),
+                            fill="tozeroy", fillcolor=f"{color}33",
+                            line=dict(color=color, width=0), showlegend=False,
+                        ), row=row, col=1)
+                    fig_roll.add_hline(y=0.05, line_dash="dash", line_color="#ef5350", row=row, col=1)
+
+                fig_roll.update_layout(
+                    height=580, template="plotly_dark",
+                    paper_bgcolor="#0e1117", plot_bgcolor="#0e1117",
+                )
+                st.plotly_chart(fig_roll, use_container_width=True)
+                st.caption("綠色填滿區域 = P < 0.05（格蘭傑因果顯著區間）")
+
+        # ── Sub-tab 4: Predictive Score ─────────────────────────────────────
+        with subtab4:
+            st.markdown("### 🎯 情緒預測力評分")
+            st.markdown("衡量情緒指標在不同領先期下對股價報酬方向的**實際預測能力**。")
+
+            opt_lead = granger_result.get("lead_lag", {}).get("optimal_lead") or 1
+            eval_lead = st.slider("評估領先期 k", 1, max_granger_lag, opt_lead)
+
+            with st.spinner("計算預測力指標..."):
+                scores = [
+                    sentiment_predictive_score(aligned["sentiment"], aligned["returns"], lead_k=k)
+                    for k in range(1, max_granger_lag + 1)
+                ]
+            scores_df = pd.DataFrame([s for s in scores if "error" not in s])
+
+            if not scores_df.empty:
+                c1, c2, c3 = st.columns(3)
+                sel = scores_df[scores_df["lead_k"] == eval_lead].iloc[0]
+                c1.metric("方向準確率", f"{sel['direction_accuracy']:.1%}",
+                           delta=f"{sel['direction_accuracy']-0.5:+.1%} vs 隨機")
+                c2.metric("Spearman IC", f"{sel['spearman_ic']:.4f}",
+                           delta="顯著" if sel["ic_p_value"] < 0.05 else "不顯著")
+                c3.metric("資訊比率 (IR)", f"{sel['information_ratio']:.3f}")
+
+                st.markdown("---")
+                ca, cb = st.columns(2)
+                with ca:
+                    fig_acc = px.line(scores_df, x="lead_k", y="direction_accuracy",
+                                       title="方向準確率 vs 領先期數",
+                                       template="plotly_dark",
+                                       labels={"lead_k": "領先期數 k", "direction_accuracy": "方向準確率"},
+                                       color_discrete_sequence=["#42a5f5"])
+                    fig_acc.add_hline(y=0.5, line_dash="dash", line_color="#78909c", annotation_text="隨機基準")
+                    fig_acc.update_layout(height=300, paper_bgcolor="#0e1117", plot_bgcolor="#0e1117")
+                    st.plotly_chart(fig_acc, use_container_width=True)
+                with cb:
+                    fig_ic = px.bar(scores_df, x="lead_k", y="spearman_ic",
+                                     title="Spearman IC vs 領先期數",
+                                     template="plotly_dark",
+                                     color="is_informative",
+                                     color_discrete_map={True: "#26a69a", False: "#546e7a"},
+                                     labels={"lead_k": "領先期數 k", "spearman_ic": "Spearman IC"})
+                    fig_ic.add_hline(y=0, line_color="#ffffff")
+                    fig_ic.update_layout(height=300, paper_bgcolor="#0e1117", plot_bgcolor="#0e1117")
+                    st.plotly_chart(fig_ic, use_container_width=True)
+
+                # Quintile return chart
+                q_returns = sel.get("quintile_returns", {})
+                if q_returns:
+                    q_df = pd.DataFrame(list(q_returns.items()), columns=["分位數", "平均報酬"])
+                    q_df["分位數"] = q_df["分位數"].map(
+                        {0: "Q1最悲觀", 1: "Q2", 2: "Q3", 3: "Q4", 4: "Q5最樂觀"}
+                    )
+                    fig_q = px.bar(q_df, x="分位數", y="平均報酬",
+                                    title=f"情緒分位數 vs 次 {eval_lead} 日平均報酬率",
+                                    template="plotly_dark",
+                                    color="平均報酬",
+                                    color_continuous_scale=["#ef5350", "#78909c", "#26a69a"])
+                    fig_q.add_hline(y=0, line_color="#ffffff")
+                    fig_q.update_layout(height=300, paper_bgcolor="#0e1117", plot_bgcolor="#0e1117")
+                    st.plotly_chart(fig_q, use_container_width=True)
 
 # ── Tab 4: Signal Summary ─────────────────────────────────────────────────────
 with tab4:
