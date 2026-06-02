@@ -146,8 +146,16 @@
   .modal-title { font-size: 18px; font-weight: 700; }
   .modal-close { background: none; border: none; color: var(--muted); font-size: 22px; cursor: pointer; line-height: 1; padding: 2px 6px; }
   .modal-close:hover { color: var(--text); }
-  .modal-body { padding: 20px 22px; }
-  .modal-kpis { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin-bottom: 18px; }
+  .modal-body { padding: 16px 22px; }
+  /* ── Modal tabs ── */
+  .modal-tabs { display: flex; gap: 6px; margin-bottom: 14px; border-bottom: 1px solid var(--border); padding-bottom: 10px; }
+  .modal-tab {
+    padding: 5px 16px; border-radius: 20px; font-size: 13px; cursor: pointer;
+    background: transparent; border: 1px solid var(--border); color: var(--muted); transition: all .2s;
+  }
+  .modal-tab.active { background: #1e3a8a; border-color: #388bfd; color: var(--text); }
+  .modal-tab:hover:not(.active) { border-color: var(--muted); color: var(--text); }
+  .modal-kpis { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin-bottom: 14px; }
   .kpi { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; }
   .kpi-label { font-size: 11px; color: var(--muted); margin-bottom: 4px; }
   .kpi-val   { font-size: 18px; font-weight: 700; }
@@ -159,6 +167,14 @@
   .modal-ind-label { font-size: 12px; color: var(--muted); margin-bottom: 4px; }
   .modal-ind-val { font-size: 18px; font-weight: 700; }
   .modal-ind-desc { font-size: 11px; color: var(--muted); margin-top: 3px; }
+  /* ── TDA tab ── */
+  .tda-features-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 8px; margin-top: 16px; }
+  .tda-feat-card { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; }
+  .tda-feat-dim { font-size: 10px; color: #60a5fa; font-weight: 700; letter-spacing: 1px; margin-bottom: 6px; }
+  .tda-feat-row { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 3px; }
+  .tda-feat-row span:first-child { color: var(--muted); }
+  .tda-feat-row span:last-child { font-weight: 600; }
+  .tda-source-note { font-size: 11px; color: var(--muted); text-align: center; margin-top: 10px; }
 
   /* ── Loader ── */
   .spinner { display: inline-block; width: 18px; height: 18px; border: 2px solid var(--border); border-top-color: #388bfd; border-radius: 50%; animation: spin .7s linear infinite; vertical-align: middle; margin-right: 8px; }
@@ -237,19 +253,44 @@
     </div>
     <div class="modal-body">
       <div class="modal-kpis" id="modal-kpis"></div>
-      <div class="chart-section">
-        <div class="chart-section-label">📈 收盤價走勢 + MA5 / MA20</div>
-        <div class="chart-wrap" style="height:200px"><canvas id="chart-price"></canvas></div>
+      <!-- 分頁按鈕 -->
+      <div class="modal-tabs">
+        <button class="modal-tab active" id="tab-btn-tech" onclick="switchModalTab('tech')">📊 技術分析</button>
+        <button class="modal-tab" id="tab-btn-tda"  onclick="switchModalTab('tda')">🔬 拓樸分析</button>
       </div>
-      <div class="chart-section">
-        <div class="chart-section-label">📊 成交量（張）</div>
-        <div class="chart-wrap" style="height:90px"><canvas id="chart-volume"></canvas></div>
+      <!-- 技術分析分頁 -->
+      <div id="modal-tab-tech">
+        <div class="chart-section">
+          <div class="chart-section-label">📈 收盤價走勢 + MA5 / MA20</div>
+          <div class="chart-wrap" style="height:200px"><canvas id="chart-price"></canvas></div>
+        </div>
+        <div class="chart-section">
+          <div class="chart-section-label">📊 成交量（張）</div>
+          <div class="chart-wrap" style="height:90px"><canvas id="chart-volume"></canvas></div>
+        </div>
+        <div class="chart-section">
+          <div class="chart-section-label">〰️ RSI (14)</div>
+          <div class="chart-wrap" style="height:90px"><canvas id="chart-rsi"></canvas></div>
+        </div>
+        <div class="modal-indicators" id="modal-inds"></div>
       </div>
-      <div class="chart-section">
-        <div class="chart-section-label">〰️ RSI (14)</div>
-        <div class="chart-wrap" style="height:90px"><canvas id="chart-rsi"></canvas></div>
+      <!-- 拓樸分析分頁 -->
+      <div id="modal-tab-tda" style="display:none">
+        <div class="chart-section">
+          <div class="chart-section-label">⭕ 2D 延遲嵌入軌跡（Phase Portrait）</div>
+          <div class="chart-wrap" style="height:200px"><canvas id="chart-delay"></canvas></div>
+        </div>
+        <div class="chart-section" style="margin-top:8px">
+          <div class="chart-section-label">▬ H₀ 持久性條碼（連通元件）</div>
+          <div class="chart-wrap" style="height:110px"><canvas id="chart-h0-bar"></canvas></div>
+        </div>
+        <div class="chart-section" style="margin-top:8px">
+          <div class="chart-section-label">○ H₁ 持久性條碼（環狀結構）</div>
+          <div class="chart-wrap" style="height:110px"><canvas id="chart-h1-bar"></canvas></div>
+        </div>
+        <div class="tda-features-grid" id="tda-features-grid"></div>
+        <div class="tda-source-note" id="tda-source-note"></div>
       </div>
-      <div class="modal-indicators" id="modal-inds"></div>
     </div>
   </div>
 </div>
@@ -333,7 +374,253 @@ function calcRSI(closes, period = 14) {
   return 100 - 100 / (1 + rs);
 }
 
-// 計算完整 RSI 序列（Wilder 平滑法），回傳與 closes 等長的陣列
+// ─────────────────────────────────────────────────────────────────────────────
+// TDA 特徵（JavaScript 近似實作）
+// ─────────────────────────────────────────────────────────────────────────────
+
+// tda_features.json 快取（從 GitHub raw 載入，或 null 表示尚未載入/不可用）
+const _tdaCache = { loaded: false, data: null };
+
+async function _loadTdaFeatures() {
+  if (_tdaCache.loaded) return _tdaCache.data;
+  _tdaCache.loaded = true;
+  const RAW = 'https://raw.githubusercontent.com/sharonhappyrichlife-blip/taiwan-stock-predictor/main/tda_features.json';
+  try {
+    const res = await fetch(RAW, { signal: AbortSignal.timeout(8000) });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const json = await res.json();
+    _tdaCache.data = json;
+    return json;
+  } catch (_) {
+    return null;
+  }
+}
+
+// ── JS 近似持久性（1D Sublevel Set，供 Python 未執行時使用）────────────────
+
+function _normArr(arr) {
+  const mn = Math.min(...arr), mx = Math.max(...arr);
+  if (mx === mn) return arr.map(() => 0);
+  return arr.map(v => (v - mn) / (mx - mn));
+}
+
+// Elder rule for 1D path graph: H0 persistence
+function _computeH0Bars(closes) {
+  const n = closes.length;
+  if (n < 4) return [];
+  const norm = _normArr(closes);
+  // Union-Find
+  const parent = Array.from({length: n}, (_, i) => i);
+  const birthVal = norm.slice();
+  const bars = [];
+  function find(x) { return parent[x] === x ? x : (parent[x] = find(parent[x])); }
+  // Process vertices in ascending order of value
+  const order = Array.from({length: n}, (_, i) => i).sort((a, b) => norm[a] - norm[b]);
+  for (const i of order) {
+    let root = i;
+    for (const nb of [i-1, i+1]) {
+      if (nb < 0 || nb >= n || norm[nb] > norm[i]) continue;
+      const nbRoot = find(nb);
+      if (nbRoot === root) continue;
+      // Merge: younger (higher birthVal) dies at norm[i]
+      if (birthVal[root] <= birthVal[nbRoot]) {
+        bars.push({ birth: birthVal[nbRoot], death: norm[i], persistence: norm[i] - birthVal[nbRoot] });
+        parent[nbRoot] = root;
+      } else {
+        bars.push({ birth: birthVal[root], death: norm[i], persistence: norm[i] - birthVal[root] });
+        parent[root] = nbRoot;
+        root = nbRoot;
+      }
+    }
+  }
+  bars.sort((a, b) => b.persistence - a.persistence);
+  return bars;
+}
+
+// H1 approximation from 2D delay embedding: detect loops via turning angle variance
+function _computeH1Bars(closes) {
+  const n = closes.length;
+  if (n < 6) return [];
+  const norm = _normArr(closes);
+  // 2D delay coordinates: [norm[i], norm[i+1]]
+  const pts = norm.slice(0, -1).map((v, i) => [v, norm[i+1]]);
+  // Compute pairwise distances, build approximate Rips filtration via edge-by-edge
+  // Simplified: find loops as significant variance in trajectory curvature
+  // Use sliding segments of 10 points, check if they form a loop (start ≈ end)
+  const loopBars = [];
+  const seg = 15;
+  for (let i = 0; i + seg < pts.length; i += Math.max(1, Math.floor(seg/3))) {
+    const s = pts[i], e = pts[i + seg - 1];
+    const dist = Math.sqrt((e[0]-s[0])**2 + (e[1]-s[1])**2);
+    // Diameter of segment
+    let diam = 0;
+    for (let a = i; a < i+seg; a++)
+      for (let b = a+1; b < i+seg; b++)
+        diam = Math.max(diam, Math.sqrt((pts[a][0]-pts[b][0])**2 + (pts[a][1]-pts[b][1])**2));
+    // Loop when segment diameter is large but start-end distance is small
+    if (diam > 0.05 && dist < diam * 0.5) {
+      const birth = dist / diam;
+      const death = Math.min(1, diam);
+      const p = death - birth;
+      if (p > 0.05) loopBars.push({ birth, death, persistence: p });
+    }
+  }
+  loopBars.sort((a, b) => b.persistence - a.persistence);
+  return loopBars.slice(0, 10);
+}
+
+function _persistenceFeatures(bars) {
+  if (!bars.length) return { max_persistence: 0, mean_persistence: 0, persistence_entropy: 0, betti_number: 0 };
+  const ps = bars.map(b => b.persistence);
+  const total = ps.reduce((a,b) => a+b, 0);
+  const probs = ps.map(p => p / total);
+  const entropy = -probs.reduce((s, p) => s + (p > 0 ? p * Math.log(p) : 0), 0);
+  return {
+    max_persistence: Math.max(...ps),
+    mean_persistence: total / ps.length,
+    persistence_entropy: entropy,
+    betti_number: ps.length,
+  };
+}
+
+// ── 分頁切換 ──────────────────────────────────────────────────────────────────
+
+let _currentModalTab = 'tech';
+function switchModalTab(tab) {
+  _currentModalTab = tab;
+  document.getElementById('modal-tab-tech').style.display = tab === 'tech' ? '' : 'none';
+  document.getElementById('modal-tab-tda').style.display  = tab === 'tda'  ? '' : 'none';
+  document.getElementById('tab-btn-tech').classList.toggle('active', tab === 'tech');
+  document.getElementById('tab-btn-tda').classList.toggle('active', tab === 'tda');
+  if (tab === 'tda' && _currentModalCode) _renderTdaTab(_currentModalCode);
+}
+
+let _currentModalCode = null;
+let _tdaChartInstances = [];
+
+function _destroyTdaCharts() {
+  _tdaChartInstances.forEach(c => c && c.destroy());
+  _tdaChartInstances = [];
+}
+
+async function _renderTdaTab(code) {
+  _destroyTdaCharts();
+  const d = state.data[code];
+  if (!d?.closes?.length) return;
+
+  const closes = d.closes;
+  const n = closes.length;
+  const norm = _normArr(closes);
+
+  // ── 嘗試從 tda_features.json 取得 ripser 結果 ─────────────────────────────
+  let tdaJson = await _loadTdaFeatures();
+  let h0Bars = null, h1Bars = null, h0Feat = null, h1Feat = null, fromRipser = false;
+  if (tdaJson?.stocks?.[code] && !tdaJson.stocks[code].error) {
+    const s = tdaJson.stocks[code];
+    h0Bars = (s.h0_bars || []).map(([b, e]) => ({ birth: b, death: e, persistence: e - b }));
+    h1Bars = (s.h1_bars || []).map(([b, e]) => ({ birth: b, death: e, persistence: e - b }));
+    h0Feat = s.h0;
+    h1Feat = s.h1;
+    fromRipser = true;
+  } else {
+    // JS 近似計算
+    h0Bars = _computeH0Bars(closes);
+    h1Bars = _computeH1Bars(closes);
+    h0Feat = _persistenceFeatures(h0Bars);
+    h1Feat = _persistenceFeatures(h1Bars);
+  }
+
+  document.getElementById('tda-source-note').textContent = fromRipser
+    ? '✅ 資料來源：Python ripser（精確 Persistent Homology）'
+    : '⚠️ 資料來源：JavaScript 近似計算（執行 python src/tda_analysis.py 可取得精確結果）';
+
+  // ── 圖1：2D 延遲嵌入軌跡 ─────────────────────────────────────────────────
+  const delayPts = norm.slice(0, -1).map((v, i) => ({ x: v, y: norm[i+1] }));
+  // 顏色：時間從藍→紅
+  const ptColors = delayPts.map((_, i) => {
+    const t = i / delayPts.length;
+    const r = Math.round(255 * t), b = Math.round(255 * (1-t));
+    return `rgba(${r},80,${b},.55)`;
+  });
+  _tdaChartInstances.push(new Chart(
+    document.getElementById('chart-delay').getContext('2d'), {
+      type: 'scatter',
+      data: { datasets: [{ label: 'Delay Plot', data: delayPts,
+        backgroundColor: ptColors, pointRadius: 2.5, pointHoverRadius: 4 }] },
+      options: {
+        responsive: true, maintainAspectRatio: false, animation: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { label: c => `(${c.parsed.x.toFixed(3)}, ${c.parsed.y.toFixed(3)})` } },
+        },
+        scales: {
+          x: { min: 0, max: 1, ticks: { color: '#8b949e', font: { size: 10 } }, grid: { color: '#21262d' },
+               title: { display: true, text: 'P(t)', color: '#8b949e', font: { size: 10 } } },
+          y: { min: 0, max: 1, ticks: { color: '#8b949e', font: { size: 10 } }, grid: { color: '#21262d' },
+               title: { display: true, text: 'P(t+1)', color: '#8b949e', font: { size: 10 } } },
+        },
+      },
+    }
+  ));
+
+  // ── 輔助：繪製水平條碼圖（floating bar chart）────────────────────────────
+  function _barcodeChart(canvasId, bars, color) {
+    const MAX_BARS = 12;
+    const shown = bars.slice(0, MAX_BARS);
+    const labels = shown.map((_, i) => `Bar ${i+1}`);
+    const data = shown.map(b => [b.birth, b.death]);
+    _tdaChartInstances.push(new Chart(
+      document.getElementById(canvasId).getContext('2d'), {
+        type: 'bar',
+        data: { labels, datasets: [{ label: '持久性', data, backgroundColor: color, borderWidth: 0 }] },
+        options: {
+          indexAxis: 'y',
+          responsive: true, maintainAspectRatio: false, animation: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: c => ` birth=${c.parsed._custom.min.toFixed(3)}, death=${c.parsed._custom.max.toFixed(3)}, Δ=${(c.parsed._custom.max-c.parsed._custom.min).toFixed(3)}`
+              }
+            }
+          },
+          scales: {
+            x: { min: 0, max: 1, ticks: { color: '#8b949e', font: { size: 10 } }, grid: { color: '#21262d' } },
+            y: { ticks: { color: '#8b949e', font: { size: 10 } }, grid: { color: '#21262d' } },
+          },
+        },
+      }
+    ));
+  }
+
+  if (h0Bars.length) _barcodeChart('chart-h0-bar', h0Bars, 'rgba(96,165,250,.7)');
+  if (h1Bars.length) _barcodeChart('chart-h1-bar', h1Bars, 'rgba(251,191,36,.7)');
+  else {
+    // 無 H1 bars 時顯示提示
+    const ctx = document.getElementById('chart-h1-bar').getContext('2d');
+    ctx.fillStyle = '#8b949e'; ctx.font = '12px sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText('無顯著 H₁ 環狀結構', ctx.canvas.width/2, 50);
+  }
+
+  // ── 特徵表格 ──────────────────────────────────────────────────────────────
+  function _featCard(title, color, feat) {
+    const rows = [
+      ['最大持久性', feat.max_persistence?.toFixed ? feat.max_persistence.toFixed(4) : '—'],
+      ['平均持久性', feat.mean_persistence?.toFixed ? feat.mean_persistence.toFixed(4) : '—'],
+      ['持久性熵',   feat.persistence_entropy?.toFixed ? feat.persistence_entropy.toFixed(4) : '—'],
+      ['Betti 數',   feat.betti_number ?? '—'],
+    ];
+    return `<div class="tda-feat-card">
+      <div class="tda-feat-dim" style="color:${color}">${title}</div>
+      ${rows.map(([k,v]) => `<div class="tda-feat-row"><span>${k}</span><span>${v}</span></div>`).join('')}
+    </div>`;
+  }
+  document.getElementById('tda-features-grid').innerHTML =
+    _featCard('H₀ — 連通元件', '#60a5fa', h0Feat) +
+    _featCard('H₁ — 環狀結構', '#fbbf24', h1Feat);
+}
+
+// ── RSI 序列計算（Wilder 平滑法），回傳與 closes 等長的陣列
 function calcRSISeries(closes, period = 14) {
   const result = new Array(closes.length).fill(null);
   if (closes.length < period + 1) return result;
@@ -658,6 +945,13 @@ async function openModal(code) {
   if (!s) return;
   const d = state.data[code];
 
+  _currentModalCode = code;
+  _currentModalTab = 'tech';
+  document.getElementById('modal-tab-tech').style.display = '';
+  document.getElementById('modal-tab-tda').style.display  = 'none';
+  document.getElementById('tab-btn-tech').classList.add('active');
+  document.getElementById('tab-btn-tda').classList.remove('active');
+
   document.getElementById('modal-title').textContent = `${s.code}　${s.name}`;
   document.getElementById('modal-subtitle').textContent = `${INDUSTRY_NAMES[s.ind] ?? ''} · 近5個月走勢`;
   document.getElementById('modal').classList.add('open');
@@ -834,6 +1128,8 @@ function closeModal() {
   document.getElementById('modal').classList.remove('open');
   document.body.style.overflow = '';
   _destroyCharts();
+  _destroyTdaCharts();
+  _currentModalCode = null;
 }
 
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
