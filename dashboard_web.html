@@ -302,7 +302,7 @@
 const INDUSTRY_NAMES = {
   '24': '半導體', '25': '電腦及週邊', '26': '光電',
   '27': '通訊網路', '28': '電子零組件', '29': '電子設備',
-  '30': '資訊服務', '31': '其他電子',  'ic': 'IC載板', 'th': '散熱',
+  '30': '資訊服務', '31': '其他電子',  'ic': 'IC載板', 'th': '散熱', 'sv': '伺服器',
 };
 
 const STOCKS = [
@@ -313,24 +313,21 @@ const STOCKS = [
   {code:'2344', name:'華邦電',    ind:'24'}, {code:'3711', name:'日月光投控',ind:'24'},
   {code:'5347', name:'世界',      ind:'24'}, {code:'3443', name:'創意',      ind:'24'},
   {code:'6533', name:'晶心科',    ind:'24'}, {code:'2337', name:'旺宏',      ind:'24'},
-  // 25 電腦及週邊
-  {code:'2317', name:'鴻海',      ind:'25'}, {code:'2382', name:'廣達',      ind:'25'},
-  {code:'2357', name:'華碩',      ind:'25'}, {code:'2353', name:'宏碁',      ind:'25'},
-  {code:'3231', name:'緯創',      ind:'25'}, {code:'2301', name:'光寶科',    ind:'25'},
-  {code:'2356', name:'英業達',    ind:'25'}, {code:'2376', name:'技嘉',      ind:'25'},
+  // 25 電腦及週邊（伺服器類已移至 sv）
+  {code:'2317', name:'鴻海',      ind:'25'}, {code:'2353', name:'宏碁',      ind:'25'},
+  {code:'2301', name:'光寶科',    ind:'25'},
   // 26 光電
   {code:'2409', name:'友達',      ind:'26'}, {code:'3481', name:'群創',      ind:'26'},
   {code:'3008', name:'大立光',    ind:'26'}, {code:'2448', name:'晶電',      ind:'26'},
   {code:'3413', name:'京鼎',      ind:'26'},
-  // 27 通訊網路
+  // 27 通訊網路（神達已移至 sv）
   {code:'2412', name:'中華電',    ind:'27'}, {code:'3045', name:'台灣大',    ind:'27'},
-  {code:'2498', name:'宏達電',    ind:'27'}, {code:'3706', name:'神達',      ind:'27'},
-  // 28 電子零組件
+  {code:'2498', name:'宏達電',    ind:'27'},
+  // 28 電子零組件（景碩已移至IC載板）
   {code:'2308', name:'台達電',    ind:'28'}, {code:'2327', name:'國巨',      ind:'28'},
   {code:'2393', name:'億光',      ind:'28'}, {code:'6116', name:'彩晶',      ind:'28'},
-  // 29 電子設備
-  {code:'2395', name:'研華',      ind:'29'}, {code:'6415', name:'矽力-KY',   ind:'29'},
-  {code:'3714', name:'兆利',      ind:'29'},
+  // 29 電子設備（研華已移至 sv）
+  {code:'6415', name:'矽力-KY',   ind:'29'}, {code:'3714', name:'兆利',      ind:'29'},
   // 30 資訊服務
   {code:'2392', name:'正崴',      ind:'30'}, {code:'5263', name:'委來好',    ind:'30'},
   {code:'8299', name:'群聯',      ind:'30'},
@@ -345,15 +342,25 @@ const STOCKS = [
   {code:'8213', name:'志超',      ind:'ic'}, {code:'6274', name:'台燿',      ind:'ic'},
   {code:'2313', name:'華通',      ind:'ic'}, {code:'2368', name:'金像電',    ind:'ic'},
   {code:'6153', name:'嘉聯益',    ind:'ic'}, {code:'5349', name:'先豐',      ind:'ic'},
-  // 散熱
+  // 散熱（晟銘電已移至 sv）
   {code:'3324', name:'雙鴻',      ind:'th'}, {code:'3017', name:'奇鋐',      ind:'th'},
   {code:'2421', name:'建準',      ind:'th'}, {code:'6230', name:'超眾',      ind:'th'},
   {code:'3483', name:'力致',      ind:'th'}, {code:'3338', name:'泰碩',      ind:'th'},
   {code:'9938', name:'百和興業',  ind:'th'}, {code:'8240', name:'新展',      ind:'th'},
-  {code:'3013', name:'晟銘電',    ind:'th'}, {code:'6275', name:'元山',      ind:'th'},
-  {code:'6189', name:'豐藝',      ind:'th'}, {code:'5243', name:'同亨',      ind:'th'},
-  {code:'2354', name:'鴻準',      ind:'th'}, {code:'3653', name:'健策',      ind:'th'},
-  {code:'5258', name:'動力-KY',   ind:'th'},
+  {code:'6275', name:'元山',      ind:'th'}, {code:'6189', name:'豐藝',      ind:'th'},
+  {code:'5243', name:'同亨',      ind:'th'}, {code:'2354', name:'鴻準',      ind:'th'},
+  {code:'3653', name:'健策',      ind:'th'}, {code:'5258', name:'動力-KY',   ind:'th'},
+  // 伺服器
+  {code:'2382', name:'廣達',      ind:'sv'}, {code:'6669', name:'緯穎',      ind:'sv'},
+  {code:'2356', name:'英業達',    ind:'sv'}, {code:'2324', name:'仁寶',      ind:'sv'},
+  {code:'3231', name:'緯創',      ind:'sv'}, {code:'2376', name:'技嘉',      ind:'sv'},
+  {code:'2377', name:'微星',      ind:'sv'}, {code:'2357', name:'華碩',      ind:'sv'},
+  {code:'2395', name:'研華',      ind:'sv'}, {code:'6226', name:'雲達',      ind:'sv'},
+  {code:'3706', name:'神達',      ind:'sv'}, {code:'8210', name:'勤誠',      ind:'sv'},
+  {code:'6940', name:'鴻齊',      ind:'sv'}, {code:'2059', name:'川湖',      ind:'sv'},
+  {code:'6221', name:'百格達',    ind:'sv'}, {code:'8114', name:'振樺電',    ind:'sv'},
+  {code:'3013', name:'晟銘電',    ind:'sv'}, {code:'6166', name:'凌華',      ind:'sv'},
+  {code:'6579', name:'研揚',      ind:'sv'}, {code:'3088', name:'艾訊',      ind:'sv'},
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -644,7 +651,7 @@ async function _renderTdaTab(code) {
       if (!shown.length) { _canvasMessage(canvasId, '無顯著持久性特徵'); return; }
       const labels = shown.map((_, i) => `#${i + 1}`);
       const data   = shown.map(b => [
-        Math.max(0, Math.min(1, b.birth)),
+        Math.max(0, Math.min(1, b.birth)),   // 確保在 [0,1] 範圍內
         Math.max(0, Math.min(1, b.death)),
       ]);
       _tdaChartInstances.push(new Chart(
@@ -658,6 +665,7 @@ async function _renderTdaTab(code) {
               legend: { display: false },
               tooltip: {
                 callbacks: {
+                  // 使用 c.raw 取代不穩定的 c.parsed._custom
                   label: c => {
                     const raw = c.raw;
                     if (!Array.isArray(raw)) return '';
@@ -886,7 +894,7 @@ function renderCards() {
     const oldEl = grid.querySelector(`[data-code="${s.code}"]`);
     const tmp = document.createElement('div');
     tmp.innerHTML = html.trim();
-    const newEl = tmp.firstElementChild;
+    const newEl = tmp.firstElementChild;   // firstElementChild 跳過開頭的空白文字節點
     if (oldEl) {
       oldEl.replaceWith(newEl);
     } else {
@@ -1167,7 +1175,7 @@ async function openModal(code) {
 
   // ── 圖3：RSI ──────────────────────────────────────────────────────────────
   const opts3 = _chartDefaults({
-    annotation: undefined,
+    annotation: undefined,   // 不用 annotation plugin，手動畫參考線
   });
   opts3.scales.y = {
     ...opts3.scales.y,
