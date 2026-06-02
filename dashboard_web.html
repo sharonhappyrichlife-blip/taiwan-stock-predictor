@@ -399,38 +399,56 @@ async function _loadTdaFeatures() {
 // ── JS 近似持久性（1D Sublevel Set，供 Python 未執行時使用）────────────────
 
 function _normArr(arr) {
-  const mn = Math.min(...arr), mx = Math.max(...arr);
-  if (mx === mn) return arr.map(() => 0);
-  return arr.map(v => (v - mn) / (mx - mn));
+  // 過濾掉 null / NaN / 0（FinMind 缺漏日可能補 0）
+  const valid = arr.filter(v => v != null && !isNaN(v) && v > 0);
+  if (!valid.length) return arr.map(() => 0);
+  const mn = Math.min(...valid), mx = Math.max(...valid);
+  if (mx === mn) return arr.map(() => 0.5);
+  return arr.map(v => (v == null || isNaN(v) || v === 0) ? 0 : (v - mn) / (mx - mn));
 }
 
-// Elder rule for 1D path graph: H0 persistence
+// Elder rule for 1D path graph: H0 persistence（iterative Union-Find，避免遞迴爆棧）
 function _computeH0Bars(closes) {
-  const n = closes.length;
+  // 只保留有效正數值
+  const valid = closes.filter(v => v != null && !isNaN(v) && v > 0);
+  const n = valid.length;
   if (n < 4) return [];
-  const norm = _normArr(closes);
-  // Union-Find
+  const norm = _normArr(valid);
+
+  // 迭代版 Union-Find（避免遞迴深度問題）
   const parent = Array.from({length: n}, (_, i) => i);
+  const rank   = new Int32Array(n);
+  function find(x) {
+    while (parent[x] !== x) { parent[x] = parent[parent[x]]; x = parent[x]; }
+    return x;
+  }
+  function union(a, b) {
+    if (rank[a] < rank[b]) { const t = a; a = b; b = t; }
+    parent[b] = a;
+    if (rank[a] === rank[b]) rank[a]++;
+    return a;
+  }
+
   const birthVal = norm.slice();
   const bars = [];
-  function find(x) { return parent[x] === x ? x : (parent[x] = find(parent[x])); }
-  // Process vertices in ascending order of value
   const order = Array.from({length: n}, (_, i) => i).sort((a, b) => norm[a] - norm[b]);
+
   for (const i of order) {
     let root = i;
-    for (const nb of [i-1, i+1]) {
+    for (const nb of [i - 1, i + 1]) {
       if (nb < 0 || nb >= n || norm[nb] > norm[i]) continue;
       const nbRoot = find(nb);
       if (nbRoot === root) continue;
-      // Merge: younger (higher birthVal) dies at norm[i]
-      if (birthVal[root] <= birthVal[nbRoot]) {
-        bars.push({ birth: birthVal[nbRoot], death: norm[i], persistence: norm[i] - birthVal[nbRoot] });
-        parent[nbRoot] = root;
-      } else {
-        bars.push({ birth: birthVal[root], death: norm[i], persistence: norm[i] - birthVal[root] });
-        parent[root] = nbRoot;
-        root = nbRoot;
+      // Elder rule：birth 較高的 component 死亡
+      const [elder, younger] = birthVal[root] <= birthVal[nbRoot]
+        ? [root, nbRoot] : [nbRoot, root];
+      const persistence = norm[i] - birthVal[younger];
+      if (persistence > 1e-9) {
+        bars.push({ birth: birthVal[younger], death: norm[i], persistence });
       }
+      root = union(elder, younger);
+      // 合併後繼承較早的 birth
+      birthVal[find(root)] = Math.min(birthVal[elder], birthVal[younger]);
     }
   }
   bars.sort((a, b) => b.persistence - a.persistence);
@@ -503,121 +521,172 @@ function _destroyTdaCharts() {
   _tdaChartInstances = [];
 }
 
+// ── 在 canvas 上顯示文字（等 canvas 有寬度後才畫）────────────────────────────
+function _canvasMessage(canvasId, msg, color = '#8b949e') {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  // 若 canvas 尚未佈局（width=0），等一幀後再畫
+  const _draw = () => {
+    const w = canvas.offsetWidth || canvas.width || 300;
+    const h = canvas.offsetHeight || canvas.height || 90;
+    canvas.width  = w;
+    canvas.height = h;
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = color;
+    ctx.font = '12px "Segoe UI", sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(msg, w / 2, h / 2);
+  };
+  if (canvas.offsetWidth > 0) _draw();
+  else requestAnimationFrame(_draw);
+}
+
 async function _renderTdaTab(code) {
   _destroyTdaCharts();
+  const tdaTab = document.getElementById('modal-tab-tda');
+  const noteEl = document.getElementById('tda-source-note');
+
+  // 顯示載入中 spinner
+  document.getElementById('tda-features-grid').innerHTML = '';
+  noteEl.innerHTML = '<span class="spinner" style="width:14px;height:14px;border-width:2px"></span> 計算拓樸特徵中...';
+
   const d = state.data[code];
-  if (!d?.closes?.length) return;
-
-  const closes = d.closes;
-  const n = closes.length;
-  const norm = _normArr(closes);
-
-  // ── 嘗試從 tda_features.json 取得 ripser 結果 ─────────────────────────────
-  let tdaJson = await _loadTdaFeatures();
-  let h0Bars = null, h1Bars = null, h0Feat = null, h1Feat = null, fromRipser = false;
-  if (tdaJson?.stocks?.[code] && !tdaJson.stocks[code].error) {
-    const s = tdaJson.stocks[code];
-    h0Bars = (s.h0_bars || []).map(([b, e]) => ({ birth: b, death: e, persistence: e - b }));
-    h1Bars = (s.h1_bars || []).map(([b, e]) => ({ birth: b, death: e, persistence: e - b }));
-    h0Feat = s.h0;
-    h1Feat = s.h1;
-    fromRipser = true;
-  } else {
-    // JS 近似計算
-    h0Bars = _computeH0Bars(closes);
-    h1Bars = _computeH1Bars(closes);
-    h0Feat = _persistenceFeatures(h0Bars);
-    h1Feat = _persistenceFeatures(h1Bars);
+  if (!d?.closes?.length) {
+    noteEl.textContent = '⚠️ 無法取得股價資料';
+    return;
   }
 
-  document.getElementById('tda-source-note').textContent = fromRipser
-    ? '✅ 資料來源：Python ripser（精確 Persistent Homology）'
-    : '⚠️ 資料來源：JavaScript 近似計算（執行 python src/tda_analysis.py 可取得精確結果）';
-
-  // ── 圖1：2D 延遲嵌入軌跡 ─────────────────────────────────────────────────
-  const delayPts = norm.slice(0, -1).map((v, i) => ({ x: v, y: norm[i+1] }));
-  // 顏色：時間從藍→紅
-  const ptColors = delayPts.map((_, i) => {
-    const t = i / delayPts.length;
-    const r = Math.round(255 * t), b = Math.round(255 * (1-t));
-    return `rgba(${r},80,${b},.55)`;
-  });
-  _tdaChartInstances.push(new Chart(
-    document.getElementById('chart-delay').getContext('2d'), {
-      type: 'scatter',
-      data: { datasets: [{ label: 'Delay Plot', data: delayPts,
-        backgroundColor: ptColors, pointRadius: 2.5, pointHoverRadius: 4 }] },
-      options: {
-        responsive: true, maintainAspectRatio: false, animation: false,
-        plugins: {
-          legend: { display: false },
-          tooltip: { callbacks: { label: c => `(${c.parsed.x.toFixed(3)}, ${c.parsed.y.toFixed(3)})` } },
-        },
-        scales: {
-          x: { min: 0, max: 1, ticks: { color: '#8b949e', font: { size: 10 } }, grid: { color: '#21262d' },
-               title: { display: true, text: 'P(t)', color: '#8b949e', font: { size: 10 } } },
-          y: { min: 0, max: 1, ticks: { color: '#8b949e', font: { size: 10 } }, grid: { color: '#21262d' },
-               title: { display: true, text: 'P(t+1)', color: '#8b949e', font: { size: 10 } } },
-        },
-      },
+  try {
+    const closes = d.closes.filter(v => v != null && !isNaN(v) && v > 0);
+    if (closes.length < 10) {
+      noteEl.textContent = `⚠️ 資料不足（只有 ${closes.length} 筆有效資料，需 ≥ 10 筆）`;
+      return;
     }
-  ));
+    const norm = _normArr(closes);
 
-  // ── 輔助：繪製水平條碼圖（floating bar chart）────────────────────────────
-  function _barcodeChart(canvasId, bars, color) {
-    const MAX_BARS = 12;
-    const shown = bars.slice(0, MAX_BARS);
-    const labels = shown.map((_, i) => `Bar ${i+1}`);
-    const data = shown.map(b => [b.birth, b.death]);
-    _tdaChartInstances.push(new Chart(
-      document.getElementById(canvasId).getContext('2d'), {
-        type: 'bar',
-        data: { labels, datasets: [{ label: '持久性', data, backgroundColor: color, borderWidth: 0 }] },
-        options: {
-          indexAxis: 'y',
-          responsive: true, maintainAspectRatio: false, animation: false,
-          plugins: {
-            legend: { display: false },
-            tooltip: {
-              callbacks: {
-                label: c => ` birth=${c.parsed._custom.min.toFixed(3)}, death=${c.parsed._custom.max.toFixed(3)}, Δ=${(c.parsed._custom.max-c.parsed._custom.min).toFixed(3)}`
+    // ── 嘗試從 tda_features.json 取得 ripser 精確結果 ──────────────────────
+    let tdaJson = null;
+    try { tdaJson = await _loadTdaFeatures(); } catch (_) {}
+    let h0Bars, h1Bars, h0Feat, h1Feat, fromRipser = false;
+
+    if (tdaJson?.stocks?.[code] && !tdaJson.stocks[code].error) {
+      const s = tdaJson.stocks[code];
+      h0Bars = (s.h0_bars || []).map(([b, e]) => ({ birth: b, death: e, persistence: e - b }))
+                                .filter(b => b.persistence > 1e-9);
+      h1Bars = (s.h1_bars || []).map(([b, e]) => ({ birth: b, death: e, persistence: e - b }))
+                                .filter(b => b.persistence > 1e-9);
+      h0Feat = s.h0; h1Feat = s.h1;
+      fromRipser = true;
+    } else {
+      h0Bars = _computeH0Bars(closes);
+      h1Bars = _computeH1Bars(closes);
+      h0Feat = _persistenceFeatures(h0Bars);
+      h1Feat = _persistenceFeatures(h1Bars);
+    }
+
+    noteEl.textContent = fromRipser
+      ? '✅ 資料來源：Python ripser（精確 Persistent Homology）'
+      : '⚠️ 資料來源：JavaScript 近似計算（執行 python src/tda_analysis.py 取得精確結果）';
+
+    // ── 圖1：2D 延遲嵌入軌跡 ───────────────────────────────────────────────
+    const delayPts = norm.slice(0, -1).map((v, i) => ({ x: v, y: norm[i + 1] }))
+                         .filter(p => !isNaN(p.x) && !isNaN(p.y));
+    if (delayPts.length >= 2) {
+      const ptColors = delayPts.map((_, i) => {
+        const t = i / delayPts.length;
+        return `rgba(${Math.round(255*t)},80,${Math.round(255*(1-t))},.6)`;
+      });
+      _tdaChartInstances.push(new Chart(
+        document.getElementById('chart-delay').getContext('2d'), {
+          type: 'scatter',
+          data: { datasets: [{ data: delayPts, backgroundColor: ptColors, pointRadius: 2.5, pointHoverRadius: 4 }] },
+          options: {
+            responsive: true, maintainAspectRatio: false, animation: false,
+            plugins: {
+              legend: { display: false },
+              tooltip: { callbacks: { label: c => `P(t)=${c.parsed.x.toFixed(3)}, P(t+1)=${c.parsed.y.toFixed(3)}` } },
+            },
+            scales: {
+              x: { min: -0.05, max: 1.05, ticks: { color: '#8b949e', font: { size: 10 } }, grid: { color: '#21262d' },
+                   title: { display: true, text: 'P(t)', color: '#8b949e', font: { size: 10 } } },
+              y: { min: -0.05, max: 1.05, ticks: { color: '#8b949e', font: { size: 10 } }, grid: { color: '#21262d' },
+                   title: { display: true, text: 'P(t+1)', color: '#8b949e', font: { size: 10 } } },
+            },
+          },
+        }
+      ));
+    } else {
+      _canvasMessage('chart-delay', '延遲圖資料不足');
+    }
+
+    // ── 輔助：水平浮動條碼圖 ──────────────────────────────────────────────
+    function _barcodeChart(canvasId, bars, color) {
+      const shown = bars.filter(b => b.persistence > 1e-6).slice(0, 12);
+      if (!shown.length) { _canvasMessage(canvasId, '無顯著持久性特徵'); return; }
+      const labels = shown.map((_, i) => `#${i + 1}`);
+      const data   = shown.map(b => [
+        Math.max(0, Math.min(1, b.birth)),   // 確保在 [0,1] 範圍內
+        Math.max(0, Math.min(1, b.death)),
+      ]);
+      _tdaChartInstances.push(new Chart(
+        document.getElementById(canvasId).getContext('2d'), {
+          type: 'bar',
+          data: { labels, datasets: [{ data, backgroundColor: color, borderWidth: 0 }] },
+          options: {
+            indexAxis: 'y',
+            responsive: true, maintainAspectRatio: false, animation: false,
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                callbacks: {
+                  // 使用 c.raw 取代不穩定的 c.parsed._custom
+                  label: c => {
+                    const raw = c.raw;
+                    if (!Array.isArray(raw)) return '';
+                    const [b, dd] = raw;
+                    return ` birth=${b.toFixed(3)}, death=${dd.toFixed(3)}, Δ=${(dd - b).toFixed(3)}`;
+                  }
+                }
               }
-            }
+            },
+            scales: {
+              x: { min: 0, max: 1, ticks: { color: '#8b949e', font: { size: 10 } }, grid: { color: '#21262d' } },
+              y: { ticks: { color: '#8b949e', font: { size: 10 } }, grid: { color: '#21262d' } },
+            },
           },
-          scales: {
-            x: { min: 0, max: 1, ticks: { color: '#8b949e', font: { size: 10 } }, grid: { color: '#21262d' } },
-            y: { ticks: { color: '#8b949e', font: { size: 10 } }, grid: { color: '#21262d' } },
-          },
-        },
-      }
-    ));
-  }
+        }
+      ));
+    }
 
-  if (h0Bars.length) _barcodeChart('chart-h0-bar', h0Bars, 'rgba(96,165,250,.7)');
-  if (h1Bars.length) _barcodeChart('chart-h1-bar', h1Bars, 'rgba(251,191,36,.7)');
-  else {
-    // 無 H1 bars 時顯示提示
-    const ctx = document.getElementById('chart-h1-bar').getContext('2d');
-    ctx.fillStyle = '#8b949e'; ctx.font = '12px sans-serif'; ctx.textAlign = 'center';
-    ctx.fillText('無顯著 H₁ 環狀結構', ctx.canvas.width/2, 50);
-  }
+    _barcodeChart('chart-h0-bar', h0Bars, 'rgba(96,165,250,.75)');
+    _barcodeChart('chart-h1-bar', h1Bars, 'rgba(251,191,36,.75)');
 
-  // ── 特徵表格 ──────────────────────────────────────────────────────────────
-  function _featCard(title, color, feat) {
-    const rows = [
-      ['最大持久性', feat.max_persistence?.toFixed ? feat.max_persistence.toFixed(4) : '—'],
-      ['平均持久性', feat.mean_persistence?.toFixed ? feat.mean_persistence.toFixed(4) : '—'],
-      ['持久性熵',   feat.persistence_entropy?.toFixed ? feat.persistence_entropy.toFixed(4) : '—'],
-      ['Betti 數',   feat.betti_number ?? '—'],
-    ];
-    return `<div class="tda-feat-card">
-      <div class="tda-feat-dim" style="color:${color}">${title}</div>
-      ${rows.map(([k,v]) => `<div class="tda-feat-row"><span>${k}</span><span>${v}</span></div>`).join('')}
-    </div>`;
+    // ── 特徵表格 ────────────────────────────────────────────────────────────
+    function _featCard(title, color, feat) {
+      const fmt = v => (typeof v === 'number' && !isNaN(v)) ? v.toFixed(4) : '—';
+      const rows = [
+        ['最大持久性', fmt(feat?.max_persistence)],
+        ['平均持久性', fmt(feat?.mean_persistence)],
+        ['持久性熵',   fmt(feat?.persistence_entropy)],
+        ['Betti 數',   feat?.betti_number ?? '—'],
+      ];
+      return `<div class="tda-feat-card">
+        <div class="tda-feat-dim" style="color:${color}">${title}</div>
+        ${rows.map(([k, v]) => `<div class="tda-feat-row"><span>${k}</span><span>${v}</span></div>`).join('')}
+      </div>`;
+    }
+    document.getElementById('tda-features-grid').innerHTML =
+      _featCard('H₀ — 連通元件', '#60a5fa', h0Feat) +
+      _featCard('H₁ — 環狀結構', '#fbbf24', h1Feat);
+
+  } catch (err) {
+    // 捕捉所有未預期錯誤，顯示友善訊息而非空白
+    console.error('[TDA]', code, err);
+    noteEl.textContent = `⚠️ 拓樸計算發生錯誤：${err.message}`;
+    ['chart-delay', 'chart-h0-bar', 'chart-h1-bar'].forEach(id => _canvasMessage(id, '計算失敗，請重試'));
   }
-  document.getElementById('tda-features-grid').innerHTML =
-    _featCard('H₀ — 連通元件', '#60a5fa', h0Feat) +
-    _featCard('H₁ — 環狀結構', '#fbbf24', h1Feat);
 }
 
 // ── RSI 序列計算（Wilder 平滑法），回傳與 closes 等長的陣列
