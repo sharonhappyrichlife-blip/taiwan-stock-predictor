@@ -545,26 +545,59 @@ function _canvasMessage(canvasId, msg, color = '#8b949e') {
 
 async function _renderTdaTab(code) {
   _destroyTdaCharts();
-  const tdaTab = document.getElementById('modal-tab-tda');
   const noteEl = document.getElementById('tda-source-note');
 
   // 顯示載入中 spinner
   document.getElementById('tda-features-grid').innerHTML = '';
   noteEl.innerHTML = '<span class="spinner" style="width:14px;height:14px;border-width:2px"></span> 計算拓樸特徵中...';
+  ['chart-delay','chart-h0-bar','chart-h1-bar'].forEach(id => _canvasMessage(id, '計算中...'));
 
   const d = state.data[code];
-  if (!d?.closes?.length) {
-    noteEl.textContent = '⚠️ 無法取得股價資料';
+  const rawCloses = d?.closes ?? [];
+
+  // ── DEBUG：印出原始資料供診斷 ──────────────────────────────────────────────
+  const validCloses = rawCloses.filter(v => v != null && !isNaN(v) && v > 0);
+  const invalidCount = rawCloses.length - validCloses.length;
+  console.group(`[TDA] ${code}`);
+  console.log('原始 closes 長度:', rawCloses.length,
+    '  有效筆數:', validCloses.length,
+    '  無效/0筆數:', invalidCount);
+  if (rawCloses.length > 0) {
+    console.log('前5筆原始值:', rawCloses.slice(0, 5));
+    console.log('後5筆原始值:', rawCloses.slice(-5));
+    console.log('最小值:', Math.min(...validCloses), '  最大值:', Math.max(...validCloses));
+  }
+
+  if (!rawCloses.length) {
+    console.warn('股票無 closes 資料');
+    console.groupEnd();
+    noteEl.textContent = '⚠️ 無法取得股價資料（closes 陣列為空）';
+    ['chart-delay','chart-h0-bar','chart-h1-bar'].forEach(id => _canvasMessage(id, '無股價資料'));
+    return;
+  }
+
+  if (validCloses.length < 10) {
+    console.warn('有效資料不足:', validCloses.length, '筆');
+    console.groupEnd();
+    noteEl.textContent = `⚠️ 資料不足（${validCloses.length} 筆有效資料，需 ≥ 10 筆）`;
+    ['chart-delay','chart-h0-bar','chart-h1-bar'].forEach(id =>
+      _canvasMessage(id, `有效資料僅 ${validCloses.length} 筆`));
     return;
   }
 
   try {
-    const closes = d.closes.filter(v => v != null && !isNaN(v) && v > 0);
-    if (closes.length < 10) {
-      noteEl.textContent = `⚠️ 資料不足（只有 ${closes.length} 筆有效資料，需 ≥ 10 筆）`;
-      return;
-    }
+    const closes = validCloses;
     const norm = _normArr(closes);
+    const normMin = Math.min(...norm), normMax = Math.max(...norm);
+    const normNanCount = norm.filter(v => isNaN(v)).length;
+    console.log('正規化後 norm:', '長度', norm.length,
+      '  範圍', normMin.toFixed(4), '~', normMax.toFixed(4),
+      '  NaN 數:', normNanCount);
+    console.log('norm 前5筆:', norm.slice(0, 5).map(v => v.toFixed(4)));
+
+    if (normNanCount > 0) {
+      console.warn('⚠️ 正規化後含有', normNanCount, '個 NaN！可能有問題');
+    }
 
     // ── 嘗試從 tda_features.json 取得 ripser 精確結果 ──────────────────────
     let tdaJson = null;
@@ -585,6 +618,17 @@ async function _renderTdaTab(code) {
       h0Feat = _persistenceFeatures(h0Bars);
       h1Feat = _persistenceFeatures(h1Bars);
     }
+
+    // ── DEBUG：印出條碼計算結果 ────────────────────────────────────────────
+    console.log('H0 bars 數量:', h0Bars.length,
+      '  最大 persistence:', h0Bars.length ? h0Bars[0].persistence.toFixed(4) : 'n/a');
+    console.log('H1 bars 數量:', h1Bars.length,
+      '  最大 persistence:', h1Bars.length ? h1Bars[0].persistence.toFixed(4) : 'n/a');
+    if (h0Bars.length > 0) {
+      console.log('H0 top3:', h0Bars.slice(0,3).map(b =>
+        `[${b.birth.toFixed(3)},${b.death.toFixed(3)}] p=${b.persistence.toFixed(3)}`));
+    }
+    console.groupEnd();
 
     noteEl.textContent = fromRipser
       ? '✅ 資料來源：Python ripser（精確 Persistent Homology）'
@@ -683,9 +727,12 @@ async function _renderTdaTab(code) {
 
   } catch (err) {
     // 捕捉所有未預期錯誤，顯示友善訊息而非空白
-    console.error('[TDA]', code, err);
-    noteEl.textContent = `⚠️ 拓樸計算發生錯誤：${err.message}`;
-    ['chart-delay', 'chart-h0-bar', 'chart-h1-bar'].forEach(id => _canvasMessage(id, '計算失敗，請重試'));
+    console.error('[TDA] 未預期錯誤', code, err);
+    console.groupEnd();
+    noteEl.innerHTML = `<span style="color:#f87171">⚠️ 計算錯誤：${err.message}</span>
+      <br><small style="color:var(--muted)">請開啟瀏覽器 Console（F12）查看詳細日誌</small>`;
+    ['chart-delay', 'chart-h0-bar', 'chart-h1-bar'].forEach(id =>
+      _canvasMessage(id, `錯誤：${err.message.slice(0, 40)}`, '#f87171'));
   }
 }
 
