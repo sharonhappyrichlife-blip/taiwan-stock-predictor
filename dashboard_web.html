@@ -302,17 +302,16 @@
 const INDUSTRY_NAMES = {
   '24': '半導體', '25': '電腦及週邊', '26': '光電',
   '27': '通訊網路', '28': '電子零組件', '29': '電子設備',
-  '30': '資訊服務', '31': '其他電子',  'ic': 'IC載板', 'th': '散熱', 'sv': '伺服器',
+  '30': '資訊服務', '31': '其他電子',  'ic': 'IC載板', 'th': '散熱', 'sv': '伺服器', 'mem': '記憶體',
 };
 
 const STOCKS = [
   // 24 半導體
   {code:'2330', name:'台積電',    ind:'24'}, {code:'2303', name:'聯電',      ind:'24'},
   {code:'2454', name:'聯發科',    ind:'24'}, {code:'3034', name:'聯詠',      ind:'24'},
-  {code:'2379', name:'瑞昱',      ind:'24'}, {code:'2408', name:'南亞科',    ind:'24'},
-  {code:'2344', name:'華邦電',    ind:'24'}, {code:'3711', name:'日月光投控',ind:'24'},
+  {code:'2379', name:'瑞昱',      ind:'24'}, {code:'3711', name:'日月光投控',ind:'24'},
   {code:'5347', name:'世界',      ind:'24'}, {code:'3443', name:'創意',      ind:'24'},
-  {code:'6533', name:'晶心科',    ind:'24'}, {code:'2337', name:'旺宏',      ind:'24'},
+  {code:'6533', name:'晶心科',    ind:'24'},
   // 25 電腦及週邊（伺服器類已移至 sv）
   {code:'2317', name:'鴻海',      ind:'25'}, {code:'2353', name:'宏碁',      ind:'25'},
   {code:'2301', name:'光寶科',    ind:'25'},
@@ -328,9 +327,8 @@ const STOCKS = [
   {code:'2393', name:'億光',      ind:'28'}, {code:'6116', name:'彩晶',      ind:'28'},
   // 29 電子設備（研華已移至 sv）
   {code:'6415', name:'矽力-KY',   ind:'29'}, {code:'3714', name:'兆利',      ind:'29'},
-  // 30 資訊服務
+  // 30 資訊服務（群聯已移至 mem）
   {code:'2392', name:'正崴',      ind:'30'}, {code:'5263', name:'委來好',    ind:'30'},
-  {code:'8299', name:'群聯',      ind:'30'},
   // 31 其他電子
   {code:'5269', name:'祥碩',      ind:'31'}, {code:'3105', name:'穩懋',      ind:'31'},
   {code:'6446', name:'藥華藥',    ind:'31'},
@@ -361,6 +359,14 @@ const STOCKS = [
   {code:'6221', name:'百格達',    ind:'sv'}, {code:'8114', name:'振樺電',    ind:'sv'},
   {code:'3013', name:'晟銘電',    ind:'sv'}, {code:'6166', name:'凌華',      ind:'sv'},
   {code:'6579', name:'研揚',      ind:'sv'}, {code:'3088', name:'艾訊',      ind:'sv'},
+  // 記憶體
+  {code:'2408', name:'南亞科',    ind:'mem'}, {code:'2344', name:'華邦電',   ind:'mem'},
+  {code:'2337', name:'旺宏',      ind:'mem'}, {code:'5346', name:'力晶投控', ind:'mem'},
+  {code:'3006', name:'晶豪科',    ind:'mem'}, {code:'3260', name:'威剛',     ind:'mem'},
+  {code:'8271', name:'宇瞻',      ind:'mem'}, {code:'2451', name:'創見',     ind:'mem'},
+  {code:'8299', name:'群聯',      ind:'mem'}, {code:'6286', name:'慧榮',     ind:'mem'},
+  {code:'8227', name:'矽成',      ind:'mem'}, {code:'5351', name:'鈺創',     ind:'mem'},
+  {code:'3016', name:'晶相光',    ind:'mem'}, {code:'2436', name:'偉詮電',   ind:'mem'},
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
