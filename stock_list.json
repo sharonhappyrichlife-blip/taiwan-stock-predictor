@@ -1,6 +1,6 @@
 {
   "generated_at": "2026-06-02T00:00:00",
-  "total": 90,
+  "total": 103,
   "industries": {
     "24": "半導體",
     "25": "電腦及週邊",
@@ -13,7 +13,8 @@
     "ic": "IC載板",
     "th": "散熱",
     "sv": "伺服器",
-    "mem": "記憶體"
+    "mem": "記憶體",
+    "psu": "電源"
   },
   "stocks": [
     {"code": "2330", "name": "台積電",     "industry_code": "24", "industry_name": "半導體",     "market": "TWSE"},
@@ -27,7 +28,6 @@
     {"code": "6533", "name": "晶心科",     "industry_code": "24", "industry_name": "半導體",     "market": "TPEx"},
     {"code": "2317", "name": "鴻海",       "industry_code": "25", "industry_name": "電腦及週邊", "market": "TWSE"},
     {"code": "2353", "name": "宏碁",       "industry_code": "25", "industry_name": "電腦及週邊", "market": "TWSE"},
-    {"code": "2301", "name": "光寶科",     "industry_code": "25", "industry_name": "電腦及週邊", "market": "TWSE"},
     {"code": "2409", "name": "友達",       "industry_code": "26", "industry_name": "光電",       "market": "TWSE"},
     {"code": "3481", "name": "群創",       "industry_code": "26", "industry_name": "光電",       "market": "TWSE"},
     {"code": "3008", "name": "大立光",     "industry_code": "26", "industry_name": "光電",       "market": "TWSE"},
@@ -36,7 +36,6 @@
     {"code": "2412", "name": "中華電",     "industry_code": "27", "industry_name": "通訊網路",   "market": "TWSE"},
     {"code": "3045", "name": "台灣大",     "industry_code": "27", "industry_name": "通訊網路",   "market": "TWSE"},
     {"code": "2498", "name": "宏達電",     "industry_code": "27", "industry_name": "通訊網路",   "market": "TWSE"},
-    {"code": "2308", "name": "台達電",     "industry_code": "28", "industry_name": "電子零組件", "market": "TWSE"},
     {"code": "2327", "name": "國巨",       "industry_code": "28", "industry_name": "電子零組件", "market": "TWSE"},
     {"code": "2393", "name": "億光",       "industry_code": "28", "industry_name": "電子零組件", "market": "TWSE"},
     {"code": "6116", "name": "彩晶",       "industry_code": "28", "industry_name": "電子零組件", "market": "TWSE"},
@@ -108,6 +107,21 @@
     {"code": "8227", "name": "矽成",       "industry_code": "mem", "industry_name": "記憶體", "market": "TPEx"},
     {"code": "5351", "name": "鈺創",       "industry_code": "mem", "industry_name": "記憶體", "market": "TPEx"},
     {"code": "3016", "name": "晶相光",     "industry_code": "mem", "industry_name": "記憶體", "market": "TPEx"},
-    {"code": "2436", "name": "偉詮電",     "industry_code": "mem", "industry_name": "記憶體", "market": "TWSE"}
+    {"code": "2436", "name": "偉詮電",     "industry_code": "mem", "industry_name": "記憶體", "market": "TWSE"},
+    {"code": "2308", "name": "台達電",     "industry_code": "psu", "industry_name": "電源",   "market": "TWSE"},
+    {"code": "2301", "name": "光寶科",     "industry_code": "psu", "industry_name": "電源",   "market": "TWSE"},
+    {"code": "6282", "name": "康舒",       "industry_code": "psu", "industry_name": "電源",   "market": "TPEx"},
+    {"code": "3015", "name": "全漢",       "industry_code": "psu", "industry_name": "電源",   "market": "TPEx"},
+    {"code": "6277", "name": "銀欣",       "industry_code": "psu", "industry_name": "電源",   "market": "TPEx"},
+    {"code": "3046", "name": "海韻電",     "industry_code": "psu", "industry_name": "電源",   "market": "TPEx"},
+    {"code": "3032", "name": "偉訓",       "industry_code": "psu", "industry_name": "電源",   "market": "TPEx"},
+    {"code": "2457", "name": "飛宏",       "industry_code": "psu", "industry_name": "電源",   "market": "TWSE"},
+    {"code": "6115", "name": "盈正",       "industry_code": "psu", "industry_name": "電源",   "market": "TPEx"},
+    {"code": "1514", "name": "亞力",       "industry_code": "psu", "industry_name": "電源",   "market": "TWSE"},
+    {"code": "6259", "name": "正凌",       "industry_code": "psu", "industry_name": "電源",   "market": "TPEx"},
+    {"code": "6245", "name": "立端",       "industry_code": "psu", "industry_name": "電源",   "market": "TPEx"},
+    {"code": "6138", "name": "茂達",       "industry_code": "psu", "industry_name": "電源",   "market": "TPEx"},
+    {"code": "3317", "name": "尼克森",     "industry_code": "psu", "industry_name": "電源",   "market": "TPEx"},
+    {"code": "6794", "name": "芯瑞達",     "industry_code": "psu", "industry_name": "電源",   "market": "TPEx"}
   ]
 }

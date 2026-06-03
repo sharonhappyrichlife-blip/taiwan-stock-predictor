@@ -302,7 +302,7 @@
 const INDUSTRY_NAMES = {
   '24': '半導體', '25': '電腦及週邊', '26': '光電',
   '27': '通訊網路', '28': '電子零組件', '29': '電子設備',
-  '30': '資訊服務', '31': '其他電子',  'ic': 'IC載板', 'th': '散熱', 'sv': '伺服器', 'mem': '記憶體',
+  '30': '資訊服務', '31': '其他電子',  'ic': 'IC載板', 'th': '散熱', 'sv': '伺服器', 'mem': '記憶體', 'psu': '電源',
 };
 
 const STOCKS = [
@@ -312,9 +312,8 @@ const STOCKS = [
   {code:'2379', name:'瑞昱',      ind:'24'}, {code:'3711', name:'日月光投控',ind:'24'},
   {code:'5347', name:'世界',      ind:'24'}, {code:'3443', name:'創意',      ind:'24'},
   {code:'6533', name:'晶心科',    ind:'24'},
-  // 25 電腦及週邊（伺服器類已移至 sv）
+  // 25 電腦及週邊（伺服器類已移至 sv，光寶科已移至 psu）
   {code:'2317', name:'鴻海',      ind:'25'}, {code:'2353', name:'宏碁',      ind:'25'},
-  {code:'2301', name:'光寶科',    ind:'25'},
   // 26 光電
   {code:'2409', name:'友達',      ind:'26'}, {code:'3481', name:'群創',      ind:'26'},
   {code:'3008', name:'大立光',    ind:'26'}, {code:'2448', name:'晶電',      ind:'26'},
@@ -322,9 +321,9 @@ const STOCKS = [
   // 27 通訊網路（神達已移至 sv）
   {code:'2412', name:'中華電',    ind:'27'}, {code:'3045', name:'台灣大',    ind:'27'},
   {code:'2498', name:'宏達電',    ind:'27'},
-  // 28 電子零組件（景碩已移至IC載板）
-  {code:'2308', name:'台達電',    ind:'28'}, {code:'2327', name:'國巨',      ind:'28'},
-  {code:'2393', name:'億光',      ind:'28'}, {code:'6116', name:'彩晶',      ind:'28'},
+  // 28 電子零組件（景碩已移至IC載板，台達電已移至 psu）
+  {code:'2327', name:'國巨',      ind:'28'}, {code:'2393', name:'億光',      ind:'28'},
+  {code:'6116', name:'彩晶',      ind:'28'},
   // 29 電子設備（研華已移至 sv）
   {code:'6415', name:'矽力-KY',   ind:'29'}, {code:'3714', name:'兆利',      ind:'29'},
   // 30 資訊服務（群聯已移至 mem）
@@ -367,6 +366,15 @@ const STOCKS = [
   {code:'8299', name:'群聯',      ind:'mem'}, {code:'6286', name:'慧榮',     ind:'mem'},
   {code:'8227', name:'矽成',      ind:'mem'}, {code:'5351', name:'鈺創',     ind:'mem'},
   {code:'3016', name:'晶相光',    ind:'mem'}, {code:'2436', name:'偉詮電',   ind:'mem'},
+  // 電源
+  {code:'2308', name:'台達電',    ind:'psu'}, {code:'2301', name:'光寶科',   ind:'psu'},
+  {code:'6282', name:'康舒',      ind:'psu'}, {code:'3015', name:'全漢',     ind:'psu'},
+  {code:'6277', name:'銀欣',      ind:'psu'}, {code:'3046', name:'海韻電',   ind:'psu'},
+  {code:'3032', name:'偉訓',      ind:'psu'}, {code:'2457', name:'飛宏',     ind:'psu'},
+  {code:'6115', name:'盈正',      ind:'psu'}, {code:'1514', name:'亞力',     ind:'psu'},
+  {code:'6259', name:'正凌',      ind:'psu'}, {code:'6245', name:'立端',     ind:'psu'},
+  {code:'6138', name:'茂達',      ind:'psu'}, {code:'3317', name:'尼克森',   ind:'psu'},
+  {code:'6794', name:'芯瑞達',    ind:'psu'},
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
