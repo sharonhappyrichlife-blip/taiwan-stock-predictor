@@ -1,6 +1,6 @@
 {
   "generated_at": "2026-06-03T00:00:00",
-  "total": 197,
+  "total": 195,
   "industries": {
     "24": "半導體",
     "25": "電腦及週邊",
@@ -515,13 +515,6 @@
       "market": "TPEx"
     },
     {
-      "code": "6288",
-      "name": "滬士電",
-      "industry_code": "ic",
-      "industry_name": "IC載板",
-      "market": "TPEx"
-    },
-    {
       "code": "8213",
       "name": "志超",
       "industry_code": "ic",
@@ -552,13 +545,6 @@
     {
       "code": "6153",
       "name": "嘉聯益",
-      "industry_code": "ic",
-      "industry_name": "IC載板",
-      "market": "TPEx"
-    },
-    {
-      "code": "5349",
-      "name": "先豐",
       "industry_code": "ic",
       "industry_name": "IC載板",
       "market": "TPEx"
