@@ -1,6 +1,6 @@
 {
   "generated_at": "2026-06-02T00:00:00",
-  "total": 80,
+  "total": 90,
   "industries": {
     "24": "半導體",
     "25": "電腦及週邊",
@@ -12,7 +12,8 @@
     "31": "其他電子",
     "ic": "IC載板",
     "th": "散熱",
-    "sv": "伺服器"
+    "sv": "伺服器",
+    "mem": "記憶體"
   },
   "stocks": [
     {"code": "2330", "name": "台積電",     "industry_code": "24", "industry_name": "半導體",     "market": "TWSE"},
@@ -20,13 +21,10 @@
     {"code": "2454", "name": "聯發科",     "industry_code": "24", "industry_name": "半導體",     "market": "TWSE"},
     {"code": "3034", "name": "聯詠",       "industry_code": "24", "industry_name": "半導體",     "market": "TWSE"},
     {"code": "2379", "name": "瑞昱",       "industry_code": "24", "industry_name": "半導體",     "market": "TWSE"},
-    {"code": "2408", "name": "南亞科",     "industry_code": "24", "industry_name": "半導體",     "market": "TWSE"},
-    {"code": "2344", "name": "華邦電",     "industry_code": "24", "industry_name": "半導體",     "market": "TWSE"},
     {"code": "3711", "name": "日月光投控", "industry_code": "24", "industry_name": "半導體",     "market": "TWSE"},
     {"code": "5347", "name": "世界",       "industry_code": "24", "industry_name": "半導體",     "market": "TWSE"},
     {"code": "3443", "name": "創意",       "industry_code": "24", "industry_name": "半導體",     "market": "TWSE"},
     {"code": "6533", "name": "晶心科",     "industry_code": "24", "industry_name": "半導體",     "market": "TPEx"},
-    {"code": "2337", "name": "旺宏",       "industry_code": "24", "industry_name": "半導體",     "market": "TWSE"},
     {"code": "2317", "name": "鴻海",       "industry_code": "25", "industry_name": "電腦及週邊", "market": "TWSE"},
     {"code": "2353", "name": "宏碁",       "industry_code": "25", "industry_name": "電腦及週邊", "market": "TWSE"},
     {"code": "2301", "name": "光寶科",     "industry_code": "25", "industry_name": "電腦及週邊", "market": "TWSE"},
@@ -46,7 +44,6 @@
     {"code": "3714", "name": "兆利",       "industry_code": "29", "industry_name": "電子設備",   "market": "TWSE"},
     {"code": "2392", "name": "正崴",       "industry_code": "30", "industry_name": "資訊服務",   "market": "TWSE"},
     {"code": "5263", "name": "委來好",     "industry_code": "30", "industry_name": "資訊服務",   "market": "TPEx"},
-    {"code": "8299", "name": "群聯",       "industry_code": "30", "industry_name": "資訊服務",   "market": "TPEx"},
     {"code": "5269", "name": "祥碩",       "industry_code": "31", "industry_name": "其他電子",   "market": "TPEx"},
     {"code": "3105", "name": "穩懋",       "industry_code": "31", "industry_name": "其他電子",   "market": "TWSE"},
     {"code": "6446", "name": "藥華藥",     "industry_code": "31", "industry_name": "其他電子",   "market": "TPEx"},
@@ -97,6 +94,20 @@
     {"code": "3013", "name": "晟銘電",     "industry_code": "sv", "industry_name": "伺服器", "market": "TWSE"},
     {"code": "6166", "name": "凌華",       "industry_code": "sv", "industry_name": "伺服器", "market": "TPEx"},
     {"code": "6579", "name": "研揚",       "industry_code": "sv", "industry_name": "伺服器", "market": "TPEx"},
-    {"code": "3088", "name": "艾訊",       "industry_code": "sv", "industry_name": "伺服器", "market": "TPEx"}
+    {"code": "3088", "name": "艾訊",       "industry_code": "sv", "industry_name": "伺服器", "market": "TPEx"},
+    {"code": "2408", "name": "南亞科",     "industry_code": "mem", "industry_name": "記憶體", "market": "TWSE"},
+    {"code": "2344", "name": "華邦電",     "industry_code": "mem", "industry_name": "記憶體", "market": "TWSE"},
+    {"code": "2337", "name": "旺宏",       "industry_code": "mem", "industry_name": "記憶體", "market": "TWSE"},
+    {"code": "5346", "name": "力晶投控",   "industry_code": "mem", "industry_name": "記憶體", "market": "TPEx"},
+    {"code": "3006", "name": "晶豪科",     "industry_code": "mem", "industry_name": "記憶體", "market": "TPEx"},
+    {"code": "3260", "name": "威剛",       "industry_code": "mem", "industry_name": "記憶體", "market": "TWSE"},
+    {"code": "8271", "name": "宇瞻",       "industry_code": "mem", "industry_name": "記憶體", "market": "TPEx"},
+    {"code": "2451", "name": "創見",       "industry_code": "mem", "industry_name": "記憶體", "market": "TWSE"},
+    {"code": "8299", "name": "群聯",       "industry_code": "mem", "industry_name": "記憶體", "market": "TPEx"},
+    {"code": "6286", "name": "慧榮",       "industry_code": "mem", "industry_name": "記憶體", "market": "TPEx"},
+    {"code": "8227", "name": "矽成",       "industry_code": "mem", "industry_name": "記憶體", "market": "TPEx"},
+    {"code": "5351", "name": "鈺創",       "industry_code": "mem", "industry_name": "記憶體", "market": "TPEx"},
+    {"code": "3016", "name": "晶相光",     "industry_code": "mem", "industry_name": "記憶體", "market": "TPEx"},
+    {"code": "2436", "name": "偉詮電",     "industry_code": "mem", "industry_name": "記憶體", "market": "TWSE"}
   ]
 }
