@@ -1,6 +1,6 @@
 {
   "generated_at": "2026-06-03T00:00:00",
-  "total": 165,
+  "total": 197,
   "industries": {
     "24": "半導體",
     "25": "電腦及週邊",
@@ -17,7 +17,11 @@
     "psu": "電源",
     "net": "網通",
     "con": "連接器",
-    "fnd": "晶圓代工"
+    "fnd": "晶圓代工",
+    "pas": "被動元件",
+    "bat": "電池",
+    "cas": "機殼",
+    "ipc": "工業電腦"
   },
   "stocks": [
     {
@@ -275,8 +279,8 @@
     {
       "code": "2327",
       "name": "國巨",
-      "industry_code": "28",
-      "industry_name": "電子零組件",
+      "industry_code": "pas",
+      "industry_name": "被動元件",
       "market": "TWSE"
     },
     {
@@ -303,8 +307,8 @@
     {
       "code": "2478",
       "name": "大毅",
-      "industry_code": "28",
-      "industry_name": "電子零組件",
+      "industry_code": "pas",
+      "industry_name": "被動元件",
       "market": "TWSE"
     },
     {
@@ -324,8 +328,8 @@
     {
       "code": "6121",
       "name": "新普",
-      "industry_code": "28",
-      "industry_name": "電子零組件",
+      "industry_code": "bat",
+      "industry_name": "電池",
       "market": "TPEx"
     },
     {
@@ -499,8 +503,8 @@
     {
       "code": "3044",
       "name": "健鼎",
-      "industry_code": "ic",
-      "industry_name": "IC載板",
+      "industry_code": "cas",
+      "industry_name": "機殼",
       "market": "TWSE"
     },
     {
@@ -639,8 +643,8 @@
     {
       "code": "2354",
       "name": "鴻準",
-      "industry_code": "th",
-      "industry_name": "散熱",
+      "industry_code": "cas",
+      "industry_name": "機殼",
       "market": "TWSE"
     },
     {
@@ -730,8 +734,8 @@
     {
       "code": "2395",
       "name": "研華",
-      "industry_code": "sv",
-      "industry_name": "伺服器",
+      "industry_code": "ipc",
+      "industry_name": "工業電腦",
       "market": "TWSE"
     },
     {
@@ -793,22 +797,22 @@
     {
       "code": "6166",
       "name": "凌華",
-      "industry_code": "sv",
-      "industry_name": "伺服器",
+      "industry_code": "ipc",
+      "industry_name": "工業電腦",
       "market": "TPEx"
     },
     {
       "code": "6579",
       "name": "研揚",
-      "industry_code": "sv",
-      "industry_name": "伺服器",
+      "industry_code": "ipc",
+      "industry_name": "工業電腦",
       "market": "TPEx"
     },
     {
       "code": "3088",
       "name": "艾訊",
-      "industry_code": "sv",
-      "industry_name": "伺服器",
+      "industry_code": "ipc",
+      "industry_name": "工業電腦",
       "market": "TPEx"
     },
     {
@@ -996,8 +1000,8 @@
     {
       "code": "2457",
       "name": "飛宏",
-      "industry_code": "psu",
-      "industry_name": "電源",
+      "industry_code": "bat",
+      "industry_name": "電池",
       "market": "TWSE"
     },
     {
@@ -1174,6 +1178,230 @@
       "industry_code": "fnd",
       "industry_name": "晶圓代工",
       "market": "TWSE"
+    },
+    {
+      "code": "2492",
+      "name": "華新科",
+      "industry_code": "pas",
+      "industry_name": "被動元件",
+      "market": "TWSE"
+    },
+    {
+      "code": "2456",
+      "name": "奇力新",
+      "industry_code": "pas",
+      "industry_name": "被動元件",
+      "market": "TWSE"
+    },
+    {
+      "code": "3026",
+      "name": "禾伸堂",
+      "industry_code": "pas",
+      "industry_name": "被動元件",
+      "market": "TPEx"
+    },
+    {
+      "code": "2428",
+      "name": "興勤",
+      "industry_code": "pas",
+      "industry_name": "被動元件",
+      "market": "TWSE"
+    },
+    {
+      "code": "2480",
+      "name": "厚聲",
+      "industry_code": "pas",
+      "industry_name": "被動元件",
+      "market": "TWSE"
+    },
+    {
+      "code": "6173",
+      "name": "信昌電",
+      "industry_code": "pas",
+      "industry_name": "被動元件",
+      "market": "TPEx"
+    },
+    {
+      "code": "2437",
+      "name": "旺詮",
+      "industry_code": "pas",
+      "industry_name": "被動元件",
+      "market": "TWSE"
+    },
+    {
+      "code": "2472",
+      "name": "立隆電",
+      "industry_code": "pas",
+      "industry_name": "被動元件",
+      "market": "TWSE"
+    },
+    {
+      "code": "6449",
+      "name": "鈺邦",
+      "industry_code": "pas",
+      "industry_name": "被動元件",
+      "market": "TPEx"
+    },
+    {
+      "code": "2375",
+      "name": "智寶",
+      "industry_code": "pas",
+      "industry_name": "被動元件",
+      "market": "TWSE"
+    },
+    {
+      "code": "3366",
+      "name": "美琦",
+      "industry_code": "pas",
+      "industry_name": "被動元件",
+      "market": "TPEx"
+    },
+    {
+      "code": "6271",
+      "name": "同欣電",
+      "industry_code": "pas",
+      "industry_name": "被動元件",
+      "market": "TPEx"
+    },
+    {
+      "code": "3211",
+      "name": "順達",
+      "industry_code": "bat",
+      "industry_name": "電池",
+      "market": "TPEx"
+    },
+    {
+      "code": "3323",
+      "name": "加百裕",
+      "industry_code": "bat",
+      "industry_name": "電池",
+      "market": "TPEx"
+    },
+    {
+      "code": "2360",
+      "name": "致茂",
+      "industry_code": "bat",
+      "industry_name": "電池",
+      "market": "TWSE"
+    },
+    {
+      "code": "3691",
+      "name": "碩禾",
+      "industry_code": "bat",
+      "industry_name": "電池",
+      "market": "TPEx"
+    },
+    {
+      "code": "3495",
+      "name": "安力",
+      "industry_code": "bat",
+      "industry_name": "電池",
+      "market": "TPEx"
+    },
+    {
+      "code": "1729",
+      "name": "必翔",
+      "industry_code": "bat",
+      "industry_name": "電池",
+      "market": "TWSE"
+    },
+    {
+      "code": "1533",
+      "name": "車王電",
+      "industry_code": "bat",
+      "industry_name": "電池",
+      "market": "TWSE"
+    },
+    {
+      "code": "6150",
+      "name": "互盛電",
+      "industry_code": "bat",
+      "industry_name": "電池",
+      "market": "TPEx"
+    },
+    {
+      "code": "2474",
+      "name": "可成",
+      "industry_code": "cas",
+      "industry_name": "機殼",
+      "market": "TWSE"
+    },
+    {
+      "code": "6125",
+      "name": "廣運",
+      "industry_code": "cas",
+      "industry_name": "機殼",
+      "market": "TPEx"
+    },
+    {
+      "code": "2904",
+      "name": "嘉里",
+      "industry_code": "cas",
+      "industry_name": "機殼",
+      "market": "TWSE"
+    },
+    {
+      "code": "3004",
+      "name": "勝碩",
+      "industry_code": "cas",
+      "industry_name": "機殼",
+      "market": "TPEx"
+    },
+    {
+      "code": "6149",
+      "name": "鋒裕",
+      "industry_code": "cas",
+      "industry_name": "機殼",
+      "market": "TPEx"
+    },
+    {
+      "code": "2467",
+      "name": "志聖",
+      "industry_code": "cas",
+      "industry_name": "機殼",
+      "market": "TWSE"
+    },
+    {
+      "code": "6235",
+      "name": "華孚",
+      "industry_code": "cas",
+      "industry_name": "機殼",
+      "market": "TPEx"
+    },
+    {
+      "code": "6414",
+      "name": "樺漢",
+      "industry_code": "ipc",
+      "industry_name": "工業電腦",
+      "market": "TPEx"
+    },
+    {
+      "code": "3022",
+      "name": "威強電",
+      "industry_code": "ipc",
+      "industry_name": "工業電腦",
+      "market": "TPEx"
+    },
+    {
+      "code": "3594",
+      "name": "磐儀",
+      "industry_code": "ipc",
+      "industry_name": "工業電腦",
+      "market": "TPEx"
+    },
+    {
+      "code": "2601",
+      "name": "益航",
+      "industry_code": "ipc",
+      "industry_name": "工業電腦",
+      "market": "TWSE"
+    },
+    {
+      "code": "6402",
+      "name": "均一",
+      "industry_code": "ipc",
+      "industry_name": "工業電腦",
+      "market": "TPEx"
     }
   ]
 }
