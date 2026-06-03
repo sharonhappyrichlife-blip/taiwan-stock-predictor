@@ -91,7 +91,7 @@
     {"code": "8046", "name": "南電", "industry_code": "ic", "industry_name": "IC載板", "market": "TPEx"},
     {"code": "3189", "name": "景碩", "industry_code": "ic", "industry_name": "IC載板", "market": "TWSE"},
     {"code": "2367", "name": "燿華", "industry_code": "ic", "industry_name": "IC載板", "market": "TWSE"},
-    {"code": "3149", "name": "定穎", "industry_code": "ic", "industry_name": "IC載板", "market": "TPEx"},
+    {"code": "3715", "name": "定穎投控", "industry_code": "ic", "industry_name": "IC載板", "market": "TPEx"},
     {"code": "3044", "name": "健鼎", "industry_code": "cas", "industry_name": "機殼", "market": "TWSE"},
     {"code": "8155", "name": "博智", "industry_code": "ic", "industry_name": "IC載板", "market": "TPEx"},
     {"code": "6288", "name": "滬士電", "industry_code": "ic", "industry_name": "IC載板", "market": "TPEx"},
