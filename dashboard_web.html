@@ -304,18 +304,16 @@ const INDUSTRY_NAMES = {
   '27': '通訊網路', '28': '電子零組件', '29': '電子設備',
   '30': '資訊服務', '31': '其他電子',  'ic': 'IC載板', 'th': '散熱',
   'sv': '伺服器', 'mem': '記憶體', 'psu': '電源', 'net': '網通', 'con': '連接器',
+  'fnd': '晶圓代工',
 };
 
 const STOCKS = [
-  // 24 半導體（3533嘉澤已移至連接器）
-  {code:'2330', name:'台積電',    ind:'24'}, {code:'2303', name:'聯電',      ind:'24'},
+  // 24 半導體（3533嘉澤已移至連接器，台積電/聯電/世界/力積電/全新已移至晶圓代工）
   {code:'2454', name:'聯發科',    ind:'24'}, {code:'3034', name:'聯詠',      ind:'24'},
   {code:'2379', name:'瑞昱',      ind:'24'}, {code:'3711', name:'日月光投控',ind:'24'},
-  {code:'5347', name:'世界',      ind:'24'}, {code:'3443', name:'創意',      ind:'24'},
-  {code:'6533', name:'晶心科',    ind:'24'}, {code:'2385', name:'群益',      ind:'24'},
-  {code:'2449', name:'京元電子',  ind:'24'}, {code:'6770', name:'力積電',    ind:'24'},
-  {code:'2455', name:'全新',      ind:'24'}, {code:'6239', name:'力成',      ind:'24'},
-  {code:'2406', name:'國碁',      ind:'24'},
+  {code:'3443', name:'創意',      ind:'24'}, {code:'6533', name:'晶心科',    ind:'24'},
+  {code:'2385', name:'群益',      ind:'24'}, {code:'2449', name:'京元電子',  ind:'24'},
+  {code:'6239', name:'力成',      ind:'24'}, {code:'2406', name:'國碁',      ind:'24'},
   // 25 電腦及週邊（伺服器類已移至 sv，光寶科已移至 psu）
   {code:'2317', name:'鴻海',      ind:'25'}, {code:'2353', name:'宏碁',      ind:'25'},
   // 26 光電
@@ -344,10 +342,10 @@ const STOCKS = [
   // 30 資訊服務（群聯已移至 mem，正崴已移至連接器）
   {code:'5263', name:'委來好',    ind:'30'}, {code:'2458', name:'義隆電',    ind:'30'},
   {code:'3293', name:'鈊象',      ind:'30'}, {code:'5432', name:'澳旺',      ind:'30'},
-  // 31 其他電子
-  {code:'5269', name:'祥碩',      ind:'31'}, {code:'3105', name:'穩懋',      ind:'31'},
-  {code:'6446', name:'藥華藥',    ind:'31'}, {code:'6790', name:'緯軟',      ind:'31'},
-  {code:'2485', name:'兆赫',      ind:'31'}, {code:'4966', name:'譜瑞-KY',  ind:'31'},
+  // 31 其他電子（穩懋已移至晶圓代工）
+  {code:'5269', name:'祥碩',      ind:'31'}, {code:'6446', name:'藥華藥',    ind:'31'},
+  {code:'6790', name:'緯軟',      ind:'31'}, {code:'2485', name:'兆赫',      ind:'31'},
+  {code:'4966', name:'譜瑞-KY',  ind:'31'},
   // IC 載板
   {code:'3037', name:'欣興',      ind:'ic'}, {code:'8046', name:'南電',      ind:'ic'},
   {code:'3189', name:'景碩',      ind:'ic'}, {code:'2367', name:'燿華',      ind:'ic'},
@@ -385,7 +383,7 @@ const STOCKS = [
   {code:'8271', name:'宇瞻',      ind:'mem'}, {code:'2451', name:'創見',     ind:'mem'},
   {code:'8299', name:'群聯',      ind:'mem'}, {code:'6286', name:'慧榮',     ind:'mem'},
   {code:'8227', name:'矽成',      ind:'mem'}, {code:'5351', name:'鈺創',     ind:'mem'},
-  {code:'3016', name:'晶相光',    ind:'mem'}, {code:'2436', name:'偉詮電',   ind:'mem'},
+  {code:'2436', name:'偉詮電',   ind:'mem'},
   {code:'2441', name:'超豐',      ind:'mem'}, {code:'3450', name:'聯鈞',     ind:'mem'},
   // 電源
   {code:'2308', name:'台達電',    ind:'psu'}, {code:'2301', name:'光寶科',   ind:'psu'},
@@ -404,6 +402,14 @@ const STOCKS = [
   // 連接器
   {code:'5457', name:'宣德',      ind:'con'}, {code:'3533', name:'嘉澤',     ind:'con'},
   {code:'2392', name:'正崴',      ind:'con'}, {code:'2358', name:'廷鑫',     ind:'con'},
+  // 晶圓代工
+  {code:'2330', name:'台積電',    ind:'fnd'}, {code:'2303', name:'聯電',     ind:'fnd'},
+  {code:'5347', name:'世界先進',  ind:'fnd'}, {code:'6770', name:'力積電',   ind:'fnd'},
+  {code:'3105', name:'穩懋',      ind:'fnd'}, {code:'8086', name:'宏捷科',   ind:'fnd'},
+  {code:'3016', name:'嘉晶',      ind:'fnd'}, {code:'3707', name:'漢磊',     ind:'fnd'},
+  {code:'1998', name:'砷化鎵',    ind:'fnd'}, {code:'2455', name:'全新',     ind:'fnd'},
+  {code:'2342', name:'茂矽',      ind:'fnd'}, {code:'6182', name:'合晶',     ind:'fnd'},
+  {code:'3532', name:'台勝科',    ind:'fnd'}, {code:'2369', name:'菱生',     ind:'fnd'},
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
