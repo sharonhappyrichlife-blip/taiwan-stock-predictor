@@ -209,8 +209,8 @@
     {
       "code": "2355",
       "name": "敬鵬",
-      "industry_code": "26",
-      "industry_name": "光電",
+      "industry_code": "ic",
+      "industry_name": "IC載板",
       "market": "TWSE"
     },
     {
