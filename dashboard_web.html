@@ -305,15 +305,15 @@ const INDUSTRY_NAMES = {
   '30': '資訊服務', '31': '其他電子',  'ic': 'IC載板', 'th': '散熱',
   'sv': '伺服器', 'mem': '記憶體', 'psu': '電源', 'net': '網通', 'con': '連接器',
   'fnd': '晶圓代工', 'pas': '被動元件', 'bat': '電池', 'cas': '機殼', 'ipc': '工業電腦',
+  'icd': 'IC設計', 'tst': '檢測設備', 'pkg': '封測',
 };
 
 const STOCKS = [
-  // 24 半導體（3533嘉澤已移至連接器，台積電/聯電/世界/力積電/全新已移至晶圓代工）
-  {code:'2454', name:'聯發科',    ind:'24'}, {code:'3034', name:'聯詠',      ind:'24'},
-  {code:'2379', name:'瑞昱',      ind:'24'}, {code:'3711', name:'日月光投控',ind:'24'},
-  {code:'3443', name:'創意',      ind:'24'}, {code:'6533', name:'晶心科',    ind:'24'},
-  {code:'2385', name:'群益',      ind:'24'}, {code:'2449', name:'京元電子',  ind:'24'},
-  {code:'6239', name:'力成',      ind:'24'}, {code:'2406', name:'國碁',      ind:'24'},
+  // 24 半導體（3533嘉澤→連接器，台積電/聯電/世界/力積電/全新→晶圓代工，聯詠→IC設計，力成→封測）
+  {code:'2454', name:'聯發科',    ind:'24'}, {code:'2379', name:'瑞昱',      ind:'24'},
+  {code:'3711', name:'日月光投控',ind:'24'}, {code:'3443', name:'創意',      ind:'24'},
+  {code:'6533', name:'晶心科',    ind:'24'}, {code:'2385', name:'群益',      ind:'24'},
+  {code:'2449', name:'京元電子',  ind:'24'}, {code:'2406', name:'國碁',      ind:'24'},
   // 25 電腦及週邊（伺服器類已移至 sv，光寶科已移至 psu）
   {code:'2317', name:'鴻海',      ind:'25'}, {code:'2353', name:'宏碁',      ind:'25'},
   // 26 光電
@@ -338,11 +338,11 @@ const STOCKS = [
   {code:'6781', name:'AES-KY',    ind:'29'}, {code:'6643', name:'M31',       ind:'29'},
   {code:'3029', name:'零壹',      ind:'29'}, {code:'8069', name:'元太',      ind:'29'},
   {code:'3596', name:'智易',      ind:'29'},
-  // 30 資訊服務（群聯已移至 mem，正崴已移至連接器）
+  // 30 資訊服務（群聯→IC設計，正崴→連接器）
   {code:'5263', name:'委來好',    ind:'30'}, {code:'2458', name:'義隆電',    ind:'30'},
   {code:'3293', name:'鈊象',      ind:'30'}, {code:'5432', name:'澳旺',      ind:'30'},
-  // 31 其他電子（穩懋已移至晶圓代工）
-  {code:'5269', name:'祥碩',      ind:'31'}, {code:'6446', name:'藥華藥',    ind:'31'},
+  // 31 其他電子（穩懋→晶圓代工，祥碩→IC設計）
+  {code:'6446', name:'藥華藥',    ind:'31'},
   {code:'6790', name:'緯軟',      ind:'31'}, {code:'2485', name:'兆赫',      ind:'31'},
   {code:'4966', name:'譜瑞-KY',  ind:'31'},
   // IC 載板
@@ -378,7 +378,7 @@ const STOCKS = [
   {code:'2337', name:'旺宏',      ind:'mem'}, {code:'5346', name:'力晶投控', ind:'mem'},
   {code:'3006', name:'晶豪科',    ind:'mem'}, {code:'3260', name:'威剛',     ind:'mem'},
   {code:'8271', name:'宇瞻',      ind:'mem'}, {code:'2451', name:'創見',     ind:'mem'},
-  {code:'8299', name:'群聯',      ind:'mem'}, {code:'6286', name:'慧榮',     ind:'mem'},
+  {code:'6286', name:'慧榮',     ind:'mem'},
   {code:'8227', name:'矽成',      ind:'mem'}, {code:'5351', name:'鈺創',     ind:'mem'},
   {code:'2436', name:'偉詮電',   ind:'mem'},
   {code:'2441', name:'超豐',      ind:'mem'}, {code:'3450', name:'聯鈞',     ind:'mem'},
@@ -432,6 +432,19 @@ const STOCKS = [
   {code:'6414', name:'樺漢',      ind:'ipc'}, {code:'3022', name:'威強電',   ind:'ipc'},
   {code:'3594', name:'磐儀',      ind:'ipc'}, {code:'2601', name:'益航',     ind:'ipc'},
   {code:'6402', name:'均一',      ind:'ipc'},
+  // IC設計（聯詠/群聯/祥碩從其他分類移入）
+  {code:'3227', name:'原相',      ind:'icd'}, {code:'3034', name:'聯詠',     ind:'icd'},
+  {code:'8299', name:'群聯',      ind:'icd'}, {code:'3529', name:'力旺',     ind:'icd'},
+  {code:'5274', name:'信驊',      ind:'icd'}, {code:'5269', name:'祥碩',     ind:'icd'},
+  // 檢測設備
+  {code:'3587', name:'閎康',      ind:'tst'}, {code:'3289', name:'宜特',     ind:'tst'},
+  {code:'6510', name:'精測',      ind:'tst'}, {code:'6515', name:'穎崴',     ind:'tst'},
+  {code:'6223', name:'旺矽',      ind:'tst'},
+  // 晶圓代工 補充
+  {code:'5425', name:'台半',      ind:'fnd'},
+  // 封測（力成從半導體移入）
+  {code:'3264', name:'欣銓',      ind:'pkg'}, {code:'6239', name:'力成',     ind:'pkg'},
+  {code:'3265', name:'台星科',    ind:'pkg'},
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
