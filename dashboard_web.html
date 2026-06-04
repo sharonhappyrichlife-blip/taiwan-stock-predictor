@@ -296,6 +296,9 @@
 </div>
 
 <script>
+// ─────────────────────────────────────────────────────────────────────────────
+// 股票清單（代號、名稱、產業代碼）
+// ─────────────────────────────────────────────────────────────────────────────
 const INDUSTRY_NAMES = {
   '24': '半導體', '25': '電腦及週邊', '26': '光電',
   '27': '通訊網路', '28': '電子零組件', '29': '電子設備',
@@ -305,42 +308,52 @@ const INDUSTRY_NAMES = {
 };
 
 const STOCKS = [
+  // 24 半導體（3533嘉澤已移至連接器，台積電/聯電/世界/力積電/全新已移至晶圓代工）
   {code:'2454', name:'聯發科',    ind:'24'}, {code:'3034', name:'聯詠',      ind:'24'},
   {code:'2379', name:'瑞昱',      ind:'24'}, {code:'3711', name:'日月光投控',ind:'24'},
   {code:'3443', name:'創意',      ind:'24'}, {code:'6533', name:'晶心科',    ind:'24'},
   {code:'2385', name:'群益',      ind:'24'}, {code:'2449', name:'京元電子',  ind:'24'},
   {code:'6239', name:'力成',      ind:'24'}, {code:'2406', name:'國碁',      ind:'24'},
+  // 25 電腦及週邊（伺服器類已移至 sv，光寶科已移至 psu）
   {code:'2317', name:'鴻海',      ind:'25'}, {code:'2353', name:'宏碁',      ind:'25'},
+  // 26 光電
   {code:'2409', name:'友達',      ind:'26'}, {code:'3481', name:'群創',      ind:'26'},
   {code:'3008', name:'大立光',    ind:'26'}, {code:'2448', name:'晶電',      ind:'26'},
   {code:'3413', name:'京鼎',      ind:'26'}, {code:'3234', name:'光環',      ind:'26'},
   {code:'3607', name:'谷崧',      ind:'26'}, {code:'6214', name:'精誠',      ind:'26'},
   {code:'3703', name:'欣奇',      ind:'26'}, {code:'2355', name:'敬鵬',      ind:'26'},
+  // 27 通訊網路（神達已移至 sv）
   {code:'2412', name:'中華電',    ind:'27'}, {code:'3045', name:'台灣大',    ind:'27'},
   {code:'2498', name:'宏達電',    ind:'27'}, {code:'4904', name:'遠傳',      ind:'27'},
   {code:'6547', name:'旭隼',      ind:'27'}, {code:'3617', name:'齊心',      ind:'27'},
   {code:'2419', name:'仲琦',      ind:'27'}, {code:'4906', name:'正文',      ind:'27'},
   {code:'3047', name:'訊舟',      ind:'27'},
+  // 28 電子零組件（景碩已移至IC載板，台達電已移至 psu，國巨/大毅已移至被動元件，新普已移至電池）
   {code:'2393', name:'億光',      ind:'28'}, {code:'6116', name:'彩晶',      ind:'28'},
   {code:'2318', name:'長城電',    ind:'28'}, {code:'1723', name:'中碳',      ind:'28'},
   {code:'2007', name:'燁興',      ind:'28'}, {code:'3563', name:'牧德',      ind:'28'},
   {code:'2321', name:'東訊',      ind:'28'},
+  // 29 電子設備（研華已移至 sv）
   {code:'6415', name:'矽力-KY',   ind:'29'}, {code:'3714', name:'兆利',      ind:'29'},
   {code:'6781', name:'AES-KY',    ind:'29'}, {code:'6643', name:'M31',       ind:'29'},
   {code:'3029', name:'零壹',      ind:'29'}, {code:'8069', name:'元太',      ind:'29'},
   {code:'3596', name:'智易',      ind:'29'},
+  // 30 資訊服務（群聯已移至 mem，正崴已移至連接器）
   {code:'5263', name:'委來好',    ind:'30'}, {code:'2458', name:'義隆電',    ind:'30'},
   {code:'3293', name:'鈊象',      ind:'30'}, {code:'5432', name:'澳旺',      ind:'30'},
+  // 31 其他電子（穩懋已移至晶圓代工）
   {code:'5269', name:'祥碩',      ind:'31'}, {code:'6446', name:'藥華藥',    ind:'31'},
   {code:'6790', name:'緯軟',      ind:'31'}, {code:'2485', name:'兆赫',      ind:'31'},
   {code:'4966', name:'譜瑞-KY',  ind:'31'},
+  // IC 載板
   {code:'3037', name:'欣興',      ind:'ic'}, {code:'8046', name:'南電',      ind:'ic'},
   {code:'3189', name:'景碩',      ind:'ic'}, {code:'2367', name:'燿華',      ind:'ic'},
   {code:'3715', name:'定穎投控',  ind:'ic'},
-  {code:'8155', name:'博智',      ind:'ic'}, {code:'6288', name:'滬士電',    ind:'ic'},
+  {code:'8155', name:'博智',      ind:'ic'},
   {code:'8213', name:'志超',      ind:'ic'}, {code:'6274', name:'台燿',      ind:'ic'},
   {code:'2313', name:'華通',      ind:'ic'}, {code:'2368', name:'金像電',    ind:'ic'},
-  {code:'6153', name:'嘉聯益',    ind:'ic'}, {code:'5349', name:'先豐',      ind:'ic'},
+  {code:'6153', name:'嘉聯益',    ind:'ic'},
+  // 散熱（晟銘電已移至 sv）
   {code:'3324', name:'雙鴻',      ind:'th'}, {code:'3017', name:'奇鋐',      ind:'th'},
   {code:'2421', name:'建準',      ind:'th'}, {code:'6230', name:'超眾',      ind:'th'},
   {code:'3483', name:'力致',      ind:'th'}, {code:'3338', name:'泰碩',      ind:'th'},
@@ -349,6 +362,7 @@ const STOCKS = [
   {code:'5243', name:'同亨',      ind:'th'},
   {code:'3653', name:'健策',      ind:'th'}, {code:'5258', name:'動力-KY',   ind:'th'},
   {code:'3019', name:'亞泰',      ind:'th'}, {code:'6405', name:'悠克',      ind:'th'},
+  // 伺服器（研華/凌華/研揚/艾訊已移至工業電腦）
   {code:'2382', name:'廣達',      ind:'sv'}, {code:'6669', name:'緯穎',      ind:'sv'},
   {code:'2356', name:'英業達',    ind:'sv'}, {code:'2324', name:'仁寶',      ind:'sv'},
   {code:'3231', name:'緯創',      ind:'sv'}, {code:'2376', name:'技嘉',      ind:'sv'},
@@ -359,6 +373,7 @@ const STOCKS = [
   {code:'8114', name:'振樺電',    ind:'sv'}, {code:'3013', name:'晟銘電',    ind:'sv'},
   {code:'4938', name:'和碩',      ind:'sv'}, {code:'3526', name:'凡甲',      ind:'sv'},
   {code:'2399', name:'映泰',      ind:'sv'},
+  // 記憶體
   {code:'2408', name:'南亞科',    ind:'mem'}, {code:'2344', name:'華邦電',   ind:'mem'},
   {code:'2337', name:'旺宏',      ind:'mem'}, {code:'5346', name:'力晶投控', ind:'mem'},
   {code:'3006', name:'晶豪科',    ind:'mem'}, {code:'3260', name:'威剛',     ind:'mem'},
@@ -367,6 +382,7 @@ const STOCKS = [
   {code:'8227', name:'矽成',      ind:'mem'}, {code:'5351', name:'鈺創',     ind:'mem'},
   {code:'2436', name:'偉詮電',   ind:'mem'},
   {code:'2441', name:'超豐',      ind:'mem'}, {code:'3450', name:'聯鈞',     ind:'mem'},
+  // 電源
   {code:'2308', name:'台達電',    ind:'psu'}, {code:'2301', name:'光寶科',   ind:'psu'},
   {code:'6282', name:'康舒',      ind:'psu'}, {code:'3015', name:'全漢',     ind:'psu'},
   {code:'6277', name:'銀欣',      ind:'psu'}, {code:'3046', name:'海韻電',   ind:'psu'},
@@ -375,11 +391,14 @@ const STOCKS = [
   {code:'6138', name:'茂達',      ind:'psu'}, {code:'3317', name:'尼克森',   ind:'psu'},
   {code:'6794', name:'芯瑞達',    ind:'psu'}, {code:'2350', name:'環電',     ind:'psu'},
   {code:'6227', name:'通泰',      ind:'psu'},
+  // 網通
   {code:'2345', name:'智邦',      ind:'net'}, {code:'3380', name:'明泰',     ind:'net'},
   {code:'5388', name:'中磊',      ind:'net'}, {code:'3704', name:'合勤控',   ind:'net'},
   {code:'2332', name:'友訊',      ind:'net'},
+  // 連接器
   {code:'5457', name:'宣德',      ind:'con'}, {code:'3533', name:'嘉澤',     ind:'con'},
   {code:'2392', name:'正崴',      ind:'con'}, {code:'2358', name:'廷鑫',     ind:'con'},
+  // 晶圓代工
   {code:'2330', name:'台積電',    ind:'fnd'}, {code:'2303', name:'聯電',     ind:'fnd'},
   {code:'5347', name:'世界先進',  ind:'fnd'}, {code:'6770', name:'力積電',   ind:'fnd'},
   {code:'3105', name:'穩懋',      ind:'fnd'}, {code:'8086', name:'宏捷科',   ind:'fnd'},
@@ -387,6 +406,7 @@ const STOCKS = [
   {code:'1998', name:'砷化鎵',    ind:'fnd'}, {code:'2455', name:'全新',     ind:'fnd'},
   {code:'2342', name:'茂矽',      ind:'fnd'}, {code:'6182', name:'合晶',     ind:'fnd'},
   {code:'3532', name:'台勝科',    ind:'fnd'}, {code:'2369', name:'菱生',     ind:'fnd'},
+  // 被動元件
   {code:'2327', name:'國巨',      ind:'pas'}, {code:'2492', name:'華新科',   ind:'pas'},
   {code:'2456', name:'奇力新',    ind:'pas'}, {code:'3026', name:'禾伸堂',   ind:'pas'},
   {code:'2478', name:'大毅',      ind:'pas'}, {code:'2428', name:'興勤',     ind:'pas'},
@@ -394,16 +414,19 @@ const STOCKS = [
   {code:'2437', name:'旺詮',      ind:'pas'}, {code:'2472', name:'立隆電',   ind:'pas'},
   {code:'6449', name:'鈺邦',      ind:'pas'}, {code:'2375', name:'智寶',     ind:'pas'},
   {code:'3366', name:'美琦',      ind:'pas'}, {code:'6271', name:'同欣電',   ind:'pas'},
+  // 電池
   {code:'6121', name:'新普',      ind:'bat'}, {code:'3211', name:'順達',     ind:'bat'},
   {code:'3323', name:'加百裕',    ind:'bat'}, {code:'2360', name:'致茂',     ind:'bat'},
   {code:'3691', name:'碩禾',      ind:'bat'}, {code:'3495', name:'安力',     ind:'bat'},
   {code:'1729', name:'必翔',      ind:'bat'}, {code:'1533', name:'車王電',   ind:'bat'},
   {code:'6150', name:'互盛電',    ind:'bat'}, {code:'2457', name:'飛宏',     ind:'bat'},
+  // 機殼
   {code:'2474', name:'可成',      ind:'cas'}, {code:'2354', name:'鴻準',     ind:'cas'},
   {code:'6125', name:'廣運',      ind:'cas'}, {code:'2904', name:'嘉里',     ind:'cas'},
   {code:'3044', name:'健鼎',      ind:'cas'}, {code:'3004', name:'勝碩',     ind:'cas'},
   {code:'6149', name:'鋒裕',      ind:'cas'}, {code:'2467', name:'志聖',     ind:'cas'},
   {code:'6235', name:'華孚',      ind:'cas'},
+  // 工業電腦（研華/凌華/研揚/艾訊從伺服器移入）
   {code:'2395', name:'研華',      ind:'ipc'}, {code:'6166', name:'凌華',     ind:'ipc'},
   {code:'3088', name:'艾訊',      ind:'ipc'}, {code:'6579', name:'研揚',     ind:'ipc'},
   {code:'6414', name:'樺漢',      ind:'ipc'}, {code:'3022', name:'威強電',   ind:'ipc'},
@@ -411,13 +434,19 @@ const STOCKS = [
   {code:'6402', name:'均一',      ind:'ipc'},
 ];
 
+// ─────────────────────────────────────────────────────────────────────────────
+// 狀態管理
+// ─────────────────────────────────────────────────────────────────────────────
 const state = {
-  data: {},
+  data: {},           // code → {price, prevClose, changePct, ma5, ma20, rsi, bias, closes, dates, highs, lows, volumes}
   activeInd: 'all',
   loading: false,
-  chartInstances: [],
+  chartInstances: [], // 最多 3 個：price, volume, rsi
 };
 
+// ─────────────────────────────────────────────────────────────────────────────
+// 技術指標計算
+// ─────────────────────────────────────────────────────────────────────────────
 function calcMA(closes, period) {
   if (closes.length < period) return null;
   const sum = closes.slice(-period).reduce((a, b) => a + b, 0);
@@ -439,6 +468,11 @@ function calcRSI(closes, period = 14) {
   return 100 - 100 / (1 + rs);
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// TDA 特徵（JavaScript 近似實作）
+// ─────────────────────────────────────────────────────────────────────────────
+
+// tda_features.json 快取（從 GitHub raw 載入，或 null 表示尚未載入/不可用）
 const _tdaCache = { loaded: false, data: null };
 
 async function _loadTdaFeatures() {
@@ -456,7 +490,10 @@ async function _loadTdaFeatures() {
   }
 }
 
+// ── JS 近似持久性（1D Sublevel Set，供 Python 未執行時使用）────────────────
+
 function _normArr(arr) {
+  // 過濾掉 null / NaN / 0（FinMind 缺漏日可能補 0）
   const valid = arr.filter(v => v != null && !isNaN(v) && v > 0);
   if (!valid.length) return arr.map(() => 0);
   const mn = Math.min(...valid), mx = Math.max(...valid);
@@ -464,11 +501,15 @@ function _normArr(arr) {
   return arr.map(v => (v == null || isNaN(v) || v === 0) ? 0 : (v - mn) / (mx - mn));
 }
 
+// Elder rule for 1D path graph: H0 persistence（iterative Union-Find，避免遞迴爆棧）
 function _computeH0Bars(closes) {
+  // 只保留有效正數值
   const valid = closes.filter(v => v != null && !isNaN(v) && v > 0);
   const n = valid.length;
   if (n < 4) return [];
   const norm = _normArr(valid);
+
+  // 迭代版 Union-Find（避免遞迴深度問題）
   const parent = Array.from({length: n}, (_, i) => i);
   const rank   = new Int32Array(n);
   function find(x) {
@@ -481,15 +522,18 @@ function _computeH0Bars(closes) {
     if (rank[a] === rank[b]) rank[a]++;
     return a;
   }
+
   const birthVal = norm.slice();
   const bars = [];
   const order = Array.from({length: n}, (_, i) => i).sort((a, b) => norm[a] - norm[b]);
+
   for (const i of order) {
     let root = i;
     for (const nb of [i - 1, i + 1]) {
       if (nb < 0 || nb >= n || norm[nb] > norm[i]) continue;
       const nbRoot = find(nb);
       if (nbRoot === root) continue;
+      // Elder rule：birth 較高的 component 死亡
       const [elder, younger] = birthVal[root] <= birthVal[nbRoot]
         ? [root, nbRoot] : [nbRoot, root];
       const persistence = norm[i] - birthVal[younger];
@@ -497,6 +541,7 @@ function _computeH0Bars(closes) {
         bars.push({ birth: birthVal[younger], death: norm[i], persistence });
       }
       root = union(elder, younger);
+      // 合併後繼承較早的 birth
       birthVal[find(root)] = Math.min(birthVal[elder], birthVal[younger]);
     }
   }
@@ -504,20 +549,27 @@ function _computeH0Bars(closes) {
   return bars;
 }
 
+// H1 approximation from 2D delay embedding: detect loops via turning angle variance
 function _computeH1Bars(closes) {
   const n = closes.length;
   if (n < 6) return [];
   const norm = _normArr(closes);
+  // 2D delay coordinates: [norm[i], norm[i+1]]
   const pts = norm.slice(0, -1).map((v, i) => [v, norm[i+1]]);
+  // Compute pairwise distances, build approximate Rips filtration via edge-by-edge
+  // Simplified: find loops as significant variance in trajectory curvature
+  // Use sliding segments of 10 points, check if they form a loop (start ≈ end)
   const loopBars = [];
   const seg = 15;
   for (let i = 0; i + seg < pts.length; i += Math.max(1, Math.floor(seg/3))) {
     const s = pts[i], e = pts[i + seg - 1];
     const dist = Math.sqrt((e[0]-s[0])**2 + (e[1]-s[1])**2);
+    // Diameter of segment
     let diam = 0;
     for (let a = i; a < i+seg; a++)
       for (let b = a+1; b < i+seg; b++)
         diam = Math.max(diam, Math.sqrt((pts[a][0]-pts[b][0])**2 + (pts[a][1]-pts[b][1])**2));
+    // Loop when segment diameter is large but start-end distance is small
     if (diam > 0.05 && dist < diam * 0.5) {
       const birth = dist / diam;
       const death = Math.min(1, diam);
@@ -543,6 +595,8 @@ function _persistenceFeatures(bars) {
   };
 }
 
+// ── 分頁切換 ──────────────────────────────────────────────────────────────────
+
 let _currentModalTab = 'tech';
 function switchModalTab(tab) {
   _currentModalTab = tab;
@@ -561,9 +615,11 @@ function _destroyTdaCharts() {
   _tdaChartInstances = [];
 }
 
+// ── 在 canvas 上顯示文字（同步執行，不用 rAF 以免覆蓋後來的 Chart.js 圖表）────
 function _canvasMessage(canvasId, msg, color = '#8b949e') {
   const canvas = document.getElementById(canvasId);
   if (!canvas) return;
+  // 取父元素寬度確保 canvas 有正確尺寸（即使自身 offsetWidth=0）
   const w = canvas.offsetWidth || canvas.parentElement?.clientWidth || 400;
   const h = canvas.offsetHeight || canvas.parentElement?.clientHeight || 90;
   canvas.width  = w;
@@ -580,11 +636,15 @@ function _canvasMessage(canvasId, msg, color = '#8b949e') {
 async function _renderTdaTab(code) {
   _destroyTdaCharts();
   const noteEl = document.getElementById('tda-source-note');
+
   document.getElementById('tda-features-grid').innerHTML = '';
   noteEl.innerHTML = '<span class="spinner" style="width:14px;height:14px;border-width:2px"></span> 計算拓樸特徵中...';
+  // 注意：不在此處呼叫 _canvasMessage，避免 rAF 延遲覆蓋後來建立的圖表
+
   const d = state.data[code];
   const rawCloses = d?.closes ?? [];
   const validCloses = rawCloses.filter(v => v != null && !isNaN(v) && v > 0);
+
   if (!rawCloses.length) {
     noteEl.textContent = '⚠️ 無法取得股價資料';
     ['chart-delay','chart-h0-bar','chart-h1-bar'].forEach(id => _canvasMessage(id, '無股價資料'));
@@ -596,12 +656,16 @@ async function _renderTdaTab(code) {
       _canvasMessage(id, `有效資料僅 ${validCloses.length} 筆`));
     return;
   }
+
   try {
     const closes = validCloses;
     const norm = _normArr(closes);
+
+    // ── 嘗試從 tda_features.json 取得 ripser 精確結果 ──────────────────────
     let tdaJson = null;
     try { tdaJson = await _loadTdaFeatures(); } catch (_) {}
     let h0Bars, h1Bars, h0Feat, h1Feat, fromRipser = false;
+
     if (tdaJson?.stocks?.[code] && !tdaJson.stocks[code].error) {
       const s = tdaJson.stocks[code];
       h0Bars = (s.h0_bars || []).map(([b, e]) => ({ birth: b, death: e, persistence: e - b }))
@@ -616,9 +680,12 @@ async function _renderTdaTab(code) {
       h0Feat = _persistenceFeatures(h0Bars);
       h1Feat = _persistenceFeatures(h1Bars);
     }
+
     noteEl.textContent = fromRipser
       ? '✅ 資料來源：Python ripser（精確 Persistent Homology）'
       : '⚠️ 資料來源：JavaScript 近似計算（執行 python src/tda_analysis.py 取得精確結果）';
+
+    // ── 圖1：2D 延遲嵌入軌跡 ───────────────────────────────────────────────
     const delayPts = norm.slice(0, -1).map((v, i) => ({ x: v, y: norm[i + 1] }))
                          .filter(p => !isNaN(p.x) && !isNaN(p.y));
     if (delayPts.length >= 2) {
@@ -648,12 +715,14 @@ async function _renderTdaTab(code) {
     } else {
       _canvasMessage('chart-delay', '延遲圖資料不足');
     }
+
+    // ── 輔助：水平浮動條碼圖 ──────────────────────────────────────────────
     function _barcodeChart(canvasId, bars, color) {
       const shown = bars.filter(b => b.persistence > 1e-6).slice(0, 12);
       if (!shown.length) { _canvasMessage(canvasId, '無顯著持久性特徵'); return; }
       const labels = shown.map((_, i) => `#${i + 1}`);
       const data   = shown.map(b => [
-        Math.max(0, Math.min(1, b.birth)),
+        Math.max(0, Math.min(1, b.birth)),   // 確保在 [0,1] 範圍內
         Math.max(0, Math.min(1, b.death)),
       ]);
       _tdaChartInstances.push(new Chart(
@@ -667,6 +736,7 @@ async function _renderTdaTab(code) {
               legend: { display: false },
               tooltip: {
                 callbacks: {
+                  // 使用 c.raw 取代不穩定的 c.parsed._custom
                   label: c => {
                     const raw = c.raw;
                     if (!Array.isArray(raw)) return '';
@@ -684,8 +754,11 @@ async function _renderTdaTab(code) {
         }
       ));
     }
+
     _barcodeChart('chart-h0-bar', h0Bars, 'rgba(96,165,250,.75)');
     _barcodeChart('chart-h1-bar', h1Bars, 'rgba(251,191,36,.75)');
+
+    // ── 特徵表格 ────────────────────────────────────────────────────────────
     function _featCard(title, color, feat) {
       const fmt = v => (typeof v === 'number' && !isNaN(v)) ? v.toFixed(4) : '—';
       const rows = [
@@ -702,6 +775,7 @@ async function _renderTdaTab(code) {
     document.getElementById('tda-features-grid').innerHTML =
       _featCard('H₀ — 連通元件', '#60a5fa', h0Feat) +
       _featCard('H₁ — 環狀結構', '#fbbf24', h1Feat);
+
   } catch (err) {
     noteEl.innerHTML = `<span style="color:#f87171">⚠️ 計算錯誤：${err.message}</span>`;
     ['chart-delay', 'chart-h0-bar', 'chart-h1-bar'].forEach(id =>
@@ -709,6 +783,7 @@ async function _renderTdaTab(code) {
   }
 }
 
+// ── RSI 序列計算（Wilder 平滑法），回傳與 closes 等長的陣列
 function calcRSISeries(closes, period = 14) {
   const result = new Array(closes.length).fill(null);
   if (closes.length < period + 1) return result;
@@ -735,17 +810,26 @@ function calcBias(price, ma20) {
 
 function getSignal(rsi, ma5, ma20, bias) {
   if (rsi === null || ma5 === null || ma20 === null) return 'na';
+  // 賣出條件
   if (rsi > 72) return 'sell';
   if (bias !== null && bias > 15) return 'sell';
   if (ma5 < ma20 && rsi > 60) return 'sell';
+  // 買進條件
   if (ma5 > ma20 && rsi >= 35 && rsi <= 65 && (bias === null || bias > -8)) return 'buy';
+  // 觀望
   return 'watch';
 }
 
 const SIGNAL_LABEL = { buy: '🟢 買進', sell: '🔴 賣出', watch: '🟡 觀望', na: '⚪ 載入中' };
 const SIGNAL_CLASS = { buy: 'buy', sell: 'sell', watch: 'watch', na: 'na' };
 
+// ─────────────────────────────────────────────────────────────────────────────
+// FinMind Taiwan Stock API — 完整支援 CORS，無需 Proxy 或 JSONP
+// https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockPrice
+// ─────────────────────────────────────────────────────────────────────────────
+
 function _startDate() {
+  // 取近 5 個月資料，確保 MA20 / RSI(14) 計算有足夠的交易日
   const d = new Date();
   d.setMonth(d.getMonth() - 5);
   return d.toISOString().slice(0, 10);
@@ -760,29 +844,39 @@ async function fetchChart(code) {
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     json = await res.json();
   } catch (_) { return null; }
+
   if (!json?.data?.length) return null;
-  const rows   = json.data;
+
+  // FinMind 回傳：[{ date, stock_id, open, max, min, close, spread, Trading_Volume, ... }]
+  // spread = 當日收盤 - 前日收盤（漲跌價差）
+  const rows   = json.data;                          // 已按日期升冪排序
   const closes  = rows.map(r => Number(r.close));
   const highs   = rows.map(r => Number(r.max));
   const lows    = rows.map(r => Number(r.min));
-  const volumes = rows.map(r => Number(r.Trading_Volume) / 1000);
-  const dates   = rows.map(r => r.date.slice(5).replace('-', '/'));
+  const volumes = rows.map(r => Number(r.Trading_Volume) / 1000); // 張（1000股=1張）
+  const dates   = rows.map(r => r.date.slice(5).replace('-', '/'));  // "MM/DD"
+
   const last      = rows[rows.length - 1];
   const price     = Number(last.close);
-  const spread    = Number(last.spread);
+  const spread    = Number(last.spread);            // 當日漲跌點數
   const prevClose = price - spread;
   const changePct = prevClose !== 0 ? (spread / prevClose) * 100 : 0;
   const dayHigh   = Number(last.max);
   const dayLow    = Number(last.min);
   const dayVol    = Number(last.Trading_Volume);
+
   const ma5  = calcMA(closes, 5);
   const ma20 = calcMA(closes, 20);
   const rsi  = calcRSI(closes, 14);
   const bias = calcBias(price, ma20);
+
   return { price, prevClose, changePct, ma5, ma20, rsi, bias,
            closes, highs, lows, volumes, dates, dayHigh, dayLow, dayVol };
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// 資料載入
+// ─────────────────────────────────────────────────────────────────────────────
 async function refreshAll() {
   if (state.loading) return;
   state.loading = true;
@@ -790,9 +884,11 @@ async function refreshAll() {
   document.getElementById('refresh-btn').textContent = '載入中...';
   document.getElementById('progress').style.width = '0%';
   document.getElementById('grid').innerHTML = '<div id="loading-msg"><span class="spinner"></span>正在從 FinMind API 載入台股資料...</div>';
+
   let done = 0;
-  const BATCH = 2;
+  const BATCH = 2;   // FinMind 無 token 建議小批次，避免觸發速率限制
   const errors = [];
+
   for (let i = 0; i < STOCKS.length; i += BATCH) {
     const chunk = STOCKS.slice(i, i + BATCH);
     await Promise.all(chunk.map(async s => {
@@ -802,15 +898,17 @@ async function refreshAll() {
       done++;
       document.getElementById('progress').style.width = `${Math.round(done / STOCKS.length * 100)}%`;
     }));
-    renderCards();
-    if (i + BATCH < STOCKS.length) await new Promise(r => setTimeout(r, 300));
+    renderCards();   // 邊載入邊渲染
+    if (i + BATCH < STOCKS.length) await new Promise(r => setTimeout(r, 300)); // 批次間隔，避免觸發速率限制
   }
+
   document.getElementById('progress').style.width = '100%';
   document.getElementById('last-update').textContent = new Date().toLocaleTimeString('zh-TW');
   document.getElementById('stats-bar').style.display = 'flex';
   document.getElementById('refresh-btn').disabled = false;
   document.getElementById('refresh-btn').textContent = '🔄 重新整理';
   state.loading = false;
+
   if (Object.keys(state.data).length === 0) {
     document.getElementById('grid').innerHTML = `
       <div id="error-msg">
@@ -828,9 +926,14 @@ async function refreshAll() {
   updateStats();
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// 渲染
+// ─────────────────────────────────────────────────────────────────────────────
 function renderCards() {
   const ind = state.activeInd;
   let stocks = ind === 'all' ? [...STOCKS] : STOCKS.filter(s => s.ind === ind);
+
+  // 排序
   const sort = document.getElementById('sort-select').value;
   stocks.sort((a, b) => {
     const da = state.data[a.code], db = state.data[b.code];
@@ -845,12 +948,16 @@ function renderCards() {
     }
     return a.code.localeCompare(b.code);
   });
+
   const grid = document.getElementById('grid');
   const existing = {};
   grid.querySelectorAll('.card').forEach(el => { existing[el.dataset.code] = el; });
+
+  // 先移除不屬於此 tab 的卡片
   Object.keys(existing).forEach(code => {
     if (!stocks.find(s => s.code === code)) existing[code].remove();
   });
+
   stocks.forEach((s, idx) => {
     const d = state.data[s.code];
     const signal = d ? getSignal(d.rsi, d.ma5, d.ma20, d.bias) : 'na';
@@ -858,17 +965,20 @@ function renderCards() {
     const oldEl = grid.querySelector(`[data-code="${s.code}"]`);
     const tmp = document.createElement('div');
     tmp.innerHTML = html.trim();
-    const newEl = tmp.firstElementChild;
+    const newEl = tmp.firstElementChild;   // firstElementChild 跳過開頭的空白文字節點
     if (oldEl) {
       oldEl.replaceWith(newEl);
     } else {
       grid.appendChild(newEl);
     }
   });
+
+  // 移除 loading-msg 如果有卡片
   if (stocks.length > 0) {
     const msg = document.getElementById('loading-msg');
     if (msg) msg.remove();
   }
+
   updateStats();
 }
 
@@ -882,11 +992,15 @@ function buildCard(s, d, signal) {
   const ma20 = d?.ma20 ? d.ma20.toFixed(1) : '—';
   const rsi  = d?.rsi  ? d.rsi.toFixed(1)  : null;
   const bias = d?.bias !== null && d?.bias !== undefined ? d.bias.toFixed(2) : null;
+
   const biasClass = !bias ? 'na' : parseFloat(bias) > 10 ? 'warn' : parseFloat(bias) < -5 ? 'warn' : '';
   const rsiClass  = !rsi  ? 'na' : parseFloat(rsi) > 70 ? 'warn' : parseFloat(rsi) < 30 ? 'positive' : '';
   const ma5Class  = (!d?.ma5 || !d?.ma20) ? 'na' : d.ma5 > d.ma20 ? 'positive' : 'negative';
+
+  // RSI bar
   const rsiVal = rsi ? parseFloat(rsi) : 50;
   const rsiColor = rsiVal > 70 ? '#ef4444' : rsiVal < 30 ? '#22c55e' : '#60a5fa';
+
   return `
   <div class="card signal-${signal}" data-code="${s.code}" onclick="openModal('${s.code}')">
     <div class="card-header">
@@ -919,6 +1033,9 @@ function buildCard(s, d, signal) {
   </div>`;
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Stats bar
+// ─────────────────────────────────────────────────────────────────────────────
 function updateStats() {
   const ind = state.activeInd;
   const stocks = ind === 'all' ? STOCKS : STOCKS.filter(s => s.ind === ind);
@@ -940,6 +1057,9 @@ function updateStats() {
   document.getElementById('s-rsi').textContent   = rsiCount ? (rsiSum / rsiCount).toFixed(1) : '—';
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Industry tabs
+// ─────────────────────────────────────────────────────────────────────────────
 function buildTabs() {
   const container = document.getElementById('tabs');
   const tabs = [['all', '全部']].concat(Object.entries(INDUSTRY_NAMES));
@@ -953,6 +1073,10 @@ function switchTab(ind) {
   document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.ind === ind));
   renderCards();
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Modal / Charts（3 圖：價格走勢、成交量、RSI）
+// ─────────────────────────────────────────────────────────────────────────────
 
 function _destroyCharts() {
   state.chartInstances.forEach(c => c && c.destroy());
@@ -983,16 +1107,20 @@ async function openModal(code) {
   const s = STOCKS.find(x => x.code === code);
   if (!s) return;
   const d = state.data[code];
+
   _currentModalCode = code;
   _currentModalTab = 'tech';
   document.getElementById('modal-tab-tech').style.display = '';
   document.getElementById('modal-tab-tda').style.display  = 'none';
   document.getElementById('tab-btn-tech').classList.add('active');
   document.getElementById('tab-btn-tda').classList.remove('active');
+
   document.getElementById('modal-title').textContent = `${s.code}　${s.name}`;
   document.getElementById('modal-subtitle').textContent = `${INDUSTRY_NAMES[s.ind] ?? ''} · 近5個月走勢`;
   document.getElementById('modal').classList.add('open');
   document.body.style.overflow = 'hidden';
+
+  // ── KPIs（6格）────────────────────────────────────────────────────────────
   const signal   = d ? getSignal(d.rsi, d.ma5, d.ma20, d.bias) : 'na';
   const chgColor = !d ? 'var(--muted)' : d.changePct >= 0 ? 'var(--green)' : 'var(--red)';
   const fmtVol   = v => v >= 1e4 ? (v / 1e4).toFixed(1) + '萬' : v.toLocaleString();
@@ -1022,6 +1150,8 @@ async function openModal(code) {
       <div class="kpi-val" style="font-size:15px">${d?.dayVol ? fmtVol(d.dayVol) : '—'}</div>
     </div>
   `;
+
+  // ── 技術指標摘要（4格）────────────────────────────────────────────────────
   const rsiDesc = !d?.rsi ? '資料不足'
     : d.rsi > 70 ? '超買區（>70）'
     : d.rsi < 30 ? '超賣區（<30）'
@@ -1054,17 +1184,26 @@ async function openModal(code) {
       <div class="modal-ind-desc">${signal==='buy'?'MA 多排 + RSI 健康':signal==='sell'?'超買或空頭排列':'持續觀察'}</div>
     </div>
   `;
+
+  // ── 銷毀舊圖 ───────────────────────────────────────────────────────────────
   _destroyCharts();
   if (!d?.closes?.length) return;
+
   const closes  = d.closes;
   const labels  = d.dates;
   const volumes = d.volumes ?? [];
   const rsiSeries = calcRSISeries(closes, 14);
+
+  // MA 序列
   const ma5Line  = closes.map((_, i) => i >= 4  ? closes.slice(i-4,  i+1).reduce((a,b)=>a+b)/5  : null);
   const ma20Line = closes.map((_, i) => i >= 19 ? closes.slice(i-19, i+1).reduce((a,b)=>a+b)/20 : null);
+
+  // 成交量顏色（當日漲=綠、跌=紅）
   const volColors = closes.map((c, i) =>
     i === 0 ? 'rgba(96,165,250,.6)' : c >= closes[i-1] ? 'rgba(74,222,128,.5)' : 'rgba(248,113,113,.5)'
   );
+
+  // ── 圖1：收盤價走勢 ───────────────────────────────────────────────────────
   const opts1 = _chartDefaults();
   opts1.scales.y.ticks.callback = v => v.toFixed(0);
   opts1.plugins.tooltip.callbacks = {
@@ -1087,6 +1226,8 @@ async function openModal(code) {
       options: opts1,
     }
   ));
+
+  // ── 圖2：成交量 ───────────────────────────────────────────────────────────
   if (volumes.length) {
     const opts2 = _chartDefaults();
     opts2.plugins.legend.display = false;
@@ -1102,7 +1243,11 @@ async function openModal(code) {
       }
     ));
   }
-  const opts3 = _chartDefaults({ annotation: undefined });
+
+  // ── 圖3：RSI ──────────────────────────────────────────────────────────────
+  const opts3 = _chartDefaults({
+    annotation: undefined,   // 不用 annotation plugin，手動畫參考線
+  });
   opts3.scales.y = {
     ...opts3.scales.y,
     min: 0, max: 100,
@@ -1112,6 +1257,8 @@ async function openModal(code) {
   opts3.plugins.tooltip.callbacks = {
     label: ctx => ` RSI: ${ctx.parsed.y != null ? ctx.parsed.y.toFixed(1) : '—'}`
   };
+  const rsiColors = rsiSeries.map(v => v == null ? 'transparent'
+    : v > 70 ? '#f87171' : v < 30 ? '#4ade80' : '#60a5fa');
   state.chartInstances.push(new Chart(
     document.getElementById('chart-rsi').getContext('2d'), {
       type: 'line',
@@ -1125,9 +1272,11 @@ async function openModal(code) {
               return v > 70 ? '#f87171' : v < 30 ? '#4ade80' : '#60a5fa';
             }},
           },
+          // 70 參考線
           { label: '超買(70)', data: new Array(labels.length).fill(70),
             borderColor: 'rgba(248,113,113,.35)', borderWidth: 1, borderDash: [4,3],
             pointRadius: 0, fill: false },
+          // 30 參考線
           { label: '超賣(30)', data: new Array(labels.length).fill(30),
             borderColor: 'rgba(74,222,128,.35)', borderWidth: 1, borderDash: [4,3],
             pointRadius: 0, fill: false },
@@ -1148,6 +1297,9 @@ function closeModal() {
 
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
 
+// ─────────────────────────────────────────────────────────────────────────────
+// 初始化
+// ─────────────────────────────────────────────────────────────────────────────
 buildTabs();
 refreshAll();
 </script>
