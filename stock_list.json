@@ -1,6 +1,6 @@
 {
   "generated_at": "2026-06-03T00:00:00",
-  "total": 195,
+  "total": 206,
   "industries": {
     "24": "半導體",
     "25": "電腦及週邊",
@@ -21,13 +21,16 @@
     "pas": "被動元件",
     "bat": "電池",
     "cas": "機殼",
-    "ipc": "工業電腦"
+    "ipc": "工業電腦",
+    "icd": "IC設計",
+    "tst": "檢測設備",
+    "pkg": "封測"
   },
   "stocks": [
     {"code": "2330", "name": "台積電", "industry_code": "fnd", "industry_name": "晶圓代工", "market": "TWSE"},
     {"code": "2303", "name": "聯電", "industry_code": "fnd", "industry_name": "晶圓代工", "market": "TWSE"},
     {"code": "2454", "name": "聯發科", "industry_code": "24", "industry_name": "半導體", "market": "TWSE"},
-    {"code": "3034", "name": "聯詠", "industry_code": "24", "industry_name": "半導體", "market": "TWSE"},
+    {"code": "3034", "name": "聯詠", "industry_code": "icd", "industry_name": "IC設計", "market": "TWSE"},
     {"code": "2379", "name": "瑞昱", "industry_code": "24", "industry_name": "半導體", "market": "TWSE"},
     {"code": "3711", "name": "日月光投控", "industry_code": "24", "industry_name": "半導體", "market": "TWSE"},
     {"code": "5347", "name": "世界先進", "industry_code": "fnd", "industry_name": "晶圓代工", "market": "TWSE"},
@@ -37,7 +40,7 @@
     {"code": "2449", "name": "京元電子", "industry_code": "24", "industry_name": "半導體", "market": "TWSE"},
     {"code": "6770", "name": "力積電", "industry_code": "fnd", "industry_name": "晶圓代工", "market": "TPEx"},
     {"code": "2455", "name": "全新", "industry_code": "fnd", "industry_name": "晶圓代工", "market": "TWSE"},
-    {"code": "6239", "name": "力成", "industry_code": "24", "industry_name": "半導體", "market": "TWSE"},
+    {"code": "6239", "name": "力成", "industry_code": "pkg", "industry_name": "封測", "market": "TWSE"},
     {"code": "2406", "name": "國碁", "industry_code": "24", "industry_name": "半導體", "market": "TWSE"},
     {"code": "2317", "name": "鴻海", "industry_code": "25", "industry_name": "電腦及週邊", "market": "TWSE"},
     {"code": "2353", "name": "宏碁", "industry_code": "25", "industry_name": "電腦及週邊", "market": "TWSE"},
@@ -81,7 +84,7 @@
     {"code": "2458", "name": "義隆電", "industry_code": "30", "industry_name": "資訊服務", "market": "TWSE"},
     {"code": "3293", "name": "鈊象", "industry_code": "30", "industry_name": "資訊服務", "market": "TPEx"},
     {"code": "5432", "name": "澳旺", "industry_code": "30", "industry_name": "資訊服務", "market": "TPEx"},
-    {"code": "5269", "name": "祥碩", "industry_code": "31", "industry_name": "其他電子", "market": "TPEx"},
+    {"code": "5269", "name": "祥碩", "industry_code": "icd", "industry_name": "IC設計", "market": "TPEx"},
     {"code": "3105", "name": "穩懋", "industry_code": "fnd", "industry_name": "晶圓代工", "market": "TWSE"},
     {"code": "6446", "name": "藥華藥", "industry_code": "31", "industry_name": "其他電子", "market": "TPEx"},
     {"code": "6790", "name": "緯軟", "industry_code": "31", "industry_name": "其他電子", "market": "TPEx"},
@@ -146,7 +149,7 @@
     {"code": "3260", "name": "威剛", "industry_code": "mem", "industry_name": "記憶體", "market": "TWSE"},
     {"code": "8271", "name": "宇瞻", "industry_code": "mem", "industry_name": "記憶體", "market": "TPEx"},
     {"code": "2451", "name": "創見", "industry_code": "mem", "industry_name": "記憶體", "market": "TWSE"},
-    {"code": "8299", "name": "群聯", "industry_code": "mem", "industry_name": "記憶體", "market": "TPEx"},
+    {"code": "8299", "name": "群聯", "industry_code": "icd", "industry_name": "IC設計", "market": "TPEx"},
     {"code": "6286", "name": "慧榮", "industry_code": "mem", "industry_name": "記憶體", "market": "TPEx"},
     {"code": "8227", "name": "矽成", "industry_code": "mem", "industry_name": "記憶體", "market": "TPEx"},
     {"code": "5351", "name": "鈺創", "industry_code": "mem", "industry_name": "記憶體", "market": "TPEx"},
@@ -218,6 +221,17 @@
     {"code": "3022", "name": "威強電", "industry_code": "ipc", "industry_name": "工業電腦", "market": "TPEx"},
     {"code": "3594", "name": "磐儀", "industry_code": "ipc", "industry_name": "工業電腦", "market": "TPEx"},
     {"code": "2601", "name": "益航", "industry_code": "ipc", "industry_name": "工業電腦", "market": "TWSE"},
-    {"code": "6402", "name": "均一", "industry_code": "ipc", "industry_name": "工業電腦", "market": "TPEx"}
+    {"code": "6402", "name": "均一", "industry_code": "ipc", "industry_name": "工業電腦", "market": "TPEx"},
+    {"code": "3227", "name": "原相", "industry_code": "icd", "industry_name": "IC設計", "market": "TPEx"},
+    {"code": "3529", "name": "力旺", "industry_code": "icd", "industry_name": "IC設計", "market": "TPEx"},
+    {"code": "5274", "name": "信驊", "industry_code": "icd", "industry_name": "IC設計", "market": "TPEx"},
+    {"code": "3587", "name": "閎康", "industry_code": "tst", "industry_name": "檢測設備", "market": "TPEx"},
+    {"code": "3289", "name": "宜特", "industry_code": "tst", "industry_name": "檢測設備", "market": "TPEx"},
+    {"code": "6510", "name": "精測", "industry_code": "tst", "industry_name": "檢測設備", "market": "TPEx"},
+    {"code": "6515", "name": "穎崴", "industry_code": "tst", "industry_name": "檢測設備", "market": "TPEx"},
+    {"code": "6223", "name": "旺矽", "industry_code": "tst", "industry_name": "檢測設備", "market": "TPEx"},
+    {"code": "5425", "name": "台半", "industry_code": "fnd", "industry_name": "晶圓代工", "market": "TPEx"},
+    {"code": "3264", "name": "欣銓", "industry_code": "pkg", "industry_name": "封測", "market": "TPEx"},
+    {"code": "3265", "name": "台星科", "industry_code": "pkg", "industry_name": "封測", "market": "TPEx"}
   ]
 }
