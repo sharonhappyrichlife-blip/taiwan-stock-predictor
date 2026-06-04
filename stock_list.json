@@ -50,7 +50,7 @@
     {"code": "3607", "name": "谷崧", "industry_code": "26", "industry_name": "光電", "market": "TPEx"},
     {"code": "6214", "name": "精誠", "industry_code": "26", "industry_name": "光電", "market": "TWSE"},
     {"code": "3703", "name": "欣奇", "industry_code": "26", "industry_name": "光電", "market": "TPEx"},
-    {"code": "2355", "name": "敬鵬", "industry_code": "26", "industry_name": "光電", "market": "TWSE"},
+    {"code": "2355", "name": "敬鵬", "industry_code": "ic", "industry_name": "IC載板", "market": "TWSE"},
     {"code": "2412", "name": "中華電", "industry_code": "27", "industry_name": "通訊網路", "market": "TWSE"},
     {"code": "3045", "name": "台灣大", "industry_code": "27", "industry_name": "通訊網路", "market": "TWSE"},
     {"code": "2498", "name": "宏達電", "industry_code": "27", "industry_name": "通訊網路", "market": "TWSE"},
