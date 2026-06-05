@@ -305,7 +305,7 @@ const INDUSTRY_NAMES = {
   '30': '資訊服務', '31': '其他電子',  'ic': 'IC載板', 'th': '散熱',
   'sv': '伺服器', 'mem': '記憶體', 'psu': '電源', 'net': '網通', 'con': '連接器',
   'fnd': '晶圓代工', 'pas': '被動元件', 'bat': '電池', 'cas': '機殼', 'ipc': '工業電腦',
-  'icd': 'IC設計', 'tst': '檢測設備', 'pkg': '封測',
+  'icd': 'IC設計', 'tst': '檢測設備', 'pkg': '封測', 'sct': '半導體檢測',
 };
 
 const STOCKS = [
@@ -437,7 +437,10 @@ const STOCKS = [
   {code:'8299', name:'群聯',      ind:'icd'}, {code:'3529', name:'力旺',     ind:'icd'},
   {code:'5274', name:'信驊',      ind:'icd'}, {code:'5269', name:'祥碩',     ind:'icd'},
   // 檢測設備
-  {code:'3587', name:'閎康',      ind:'tst'}, {code:'3289', name:'宜特',     ind:'tst'},
+  // 半導體檢測（閎康/宜特從檢測設備移入）
+  {code:'3587', name:'閎康',      ind:'sct'}, {code:'3289', name:'宜特',     ind:'sct'},
+  {code:'6830', name:'汎銓',      ind:'sct'},
+  // 檢測設備
   {code:'6510', name:'精測',      ind:'tst'}, {code:'6515', name:'穎崴',     ind:'tst'},
   {code:'6223', name:'旺矽',      ind:'tst'},
   // 晶圓代工 補充
