@@ -1,6 +1,6 @@
 {
   "generated_at": "2026-06-03T00:00:00",
-  "total": 206,
+  "total": 207,
   "industries": {
     "24": "半導體",
     "25": "電腦及週邊",
@@ -24,7 +24,8 @@
     "ipc": "工業電腦",
     "icd": "IC設計",
     "tst": "檢測設備",
-    "pkg": "封測"
+    "pkg": "封測",
+    "sct": "半導體檢測"
   },
   "stocks": [
     {
@@ -1416,15 +1417,15 @@
     {
       "code": "3587",
       "name": "閎康",
-      "industry_code": "tst",
-      "industry_name": "檢測設備",
+      "industry_code": "sct",
+      "industry_name": "半導體檢測",
       "market": "TPEx"
     },
     {
       "code": "3289",
       "name": "宜特",
-      "industry_code": "tst",
-      "industry_name": "檢測設備",
+      "industry_code": "sct",
+      "industry_name": "半導體檢測",
       "market": "TPEx"
     },
     {
@@ -1467,6 +1468,13 @@
       "name": "台星科",
       "industry_code": "pkg",
       "industry_name": "封測",
+      "market": "TPEx"
+    },
+    {
+      "code": "6830",
+      "name": "汎銓",
+      "industry_code": "sct",
+      "industry_name": "半導體檢測",
       "market": "TPEx"
     }
   ]
