@@ -1,9 +1,8 @@
 {
   "generated_at": "2026-06-03T00:00:00",
-  "total": 208,
+  "total": 205,
   "industries": {
     "24": "半導體",
-    "25": "電腦",
     "26": "光電",
     "27": "通訊網路",
     "28": "電子零組件",
@@ -131,20 +130,6 @@
       "name": "國碁",
       "industry_code": "24",
       "industry_name": "半導體",
-      "market": "TWSE"
-    },
-    {
-      "code": "2317",
-      "name": "鴻海",
-      "industry_code": "25",
-      "industry_name": "電腦",
-      "market": "TWSE"
-    },
-    {
-      "code": "2353",
-      "name": "宏碁",
-      "industry_code": "25",
-      "industry_name": "電腦",
       "market": "TWSE"
     },
     {
@@ -1475,13 +1460,6 @@
       "name": "汎銓",
       "industry_code": "sct",
       "industry_name": "半導體檢測",
-      "market": "TPEx"
-    },
-    {
-      "code": "8088",
-      "name": "品安",
-      "industry_code": "25",
-      "industry_name": "電腦",
       "market": "TPEx"
     }
   ]
